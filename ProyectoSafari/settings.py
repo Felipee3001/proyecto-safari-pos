@@ -60,14 +60,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ProyectoSafari.wsgi.application'
 
 
-# Database
 if 'MYSQLHOST' in os.environ:
-    # Configuración automática cuando corre en Railway
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('MYSQLDATABASE'),
-            'USER': os.environ.get('MYSQLUSER'),
+            'NAME': os.environ.get('MYSQLDATABASE') or 'railway',
+            'USER': os.environ.get('MYSQLUSER') or 'root',
             'PASSWORD': os.environ.get('MYSQLPASSWORD'),
             'HOST': os.environ.get('MYSQLHOST'),
             'PORT': os.environ.get('MYSQLPORT', '3306'),
