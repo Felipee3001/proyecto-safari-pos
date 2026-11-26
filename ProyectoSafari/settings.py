@@ -61,22 +61,37 @@ WSGI_APPLICATION = 'ProyectoSafari.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-DATABASES = {
-    'default': dj_database_url.config(
-        default='mysql://root:inacap@127.0.0.1:3306/safari_db',
-        conn_max_age=600
-    )
-}
-
-DATABASES['default']['OPTIONS'] = {
-    'charset': 'utf8mb4',
-    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-}
+if 'MYSQLHOST' in os.environ:
+    # Configuración automática cuando corre en Railway
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('MYSQLDATABASE'),
+            'USER': os.environ.get('MYSQLUSER'),
+            'PASSWORD': os.environ.get('MYSQLPASSWORD'),
+            'HOST': os.environ.get('MYSQLHOST'),
+            'PORT': os.environ.get('MYSQLPORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
+else:
+    # Configuración cuando corre en tu computador local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'safari_db',
+            'USER': 'root',
+            'PASSWORD': 'inacap',
+            'PORT': 3306,
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 
 # Password validation
