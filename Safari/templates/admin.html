@@ -120,7 +120,7 @@
                     <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: #F8FAFC; padding: 8px 12px; border-radius: 10px; border: 1px solid #E2E8F0;">
                         <div style="position: relative; flex: 1; min-width: 180px;">
                             <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none;">🔍</span>
-                            <input type="text" id="buscador-empleados-admin" oninput="renderEmpleados()" placeholder="Buscar por nombre o usuario..." style="width: 100%; padding: 6px 10px 6px 28px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 600; color: #1E293B; box-sizing: border-box;">
+                            <input type="text" id="buscador-empleados-admin" oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s]/g, ''); renderEmpleados();" placeholder="Buscar por nombre o usuario..." style="width: 100%; padding: 6px 10px 6px 28px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 600; color: #1E293B; box-sizing: border-box;">
                         </div>
                         <select id="filtro-rol-admin" onchange="renderEmpleados()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 700; color: #334155; background: #FFFFFF; cursor: pointer;">
                             <option value="TODOS">👥 Todos los Roles</option>
@@ -175,7 +175,7 @@
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Detalle Consumo</label>
-                        <input type="text" id="fiado-detalle-input" class="form-control" placeholder="ej: Almuerzo + Jugo" style="padding: 8px 10px; font-size: 12px;" required>
+                        <input type="text" id="fiado-detalle-input" class="form-control" placeholder="ej: Almuerzo y Jugo" oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s]/g, '');" style="padding: 8px 10px; font-size: 12px;" required>
                     </div>
                     <div>
                         <label style="font-size: 11px; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Monto ($)</label>
@@ -251,7 +251,7 @@
                     <form id="form-producto" onsubmit="guardarProductoLocal(event)" style="display: flex; flex-direction: column; flex: 1;">
                         <div class="form-group">
                             <label for="prod-nombre">Nombre del Producto</label>
-                            <input type="text" id="prod-nombre" class="form-control" placeholder="ej: Papas Fritas Suprema" required>
+                            <input type="text" id="prod-nombre" class="form-control" placeholder="ej: Papas Fritas Suprema" oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s]/g, '');" required>
                         </div>
                         <div class="form-group">
                             <label for="prod-precio">Precio Unitario ($)</label>
