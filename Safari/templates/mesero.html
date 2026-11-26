@@ -31,12 +31,12 @@
         <div style="display: flex; gap: 10px; align-items: center;">
             <!-- BOTÓN 1: Iniciar / Cerrar Jornada Mesero -->
             <button id="btn-jornada-mesero" class="btn-nav" onclick="gestionarJornadaMesero()" style="background-color: #27AE60; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                🟢 Iniciar Jornada
+                🟢 Iniciar Turno
             </button>
 
             <!-- BOTÓN 2: Pausar / Reanudar Jornada Mesero -->
             <button id="btn-pausar-mesero" class="btn-nav" onclick="pausarReanudarJornadaMesero()" style="display: none; background-color: #F39C12; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                ⏸️ Pausar Jornada
+                ⏸️ Pausar Turno
             </button>
 
             <!-- BOTÓN 3: Cerrar Sesión con modal elegante -->
@@ -178,12 +178,12 @@
     <div id="modal-pausa-mesero-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(6px); z-index: 99997; align-items: center; justify-content: center;">
         <div style="background: #ffffff; padding: 30px; border-radius: 16px; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); color: #1e293b;">
             <div style="font-size: 45px; margin-bottom: 10px;">⏸️</div>
-            <h3 style="margin: 0; color: #D68910; font-size: 22px; font-weight: 800;">Jornada del Mesero en Pausa</h3>
+            <h3 style="margin: 0; color: #D68910; font-size: 22px; font-weight: 800;">Turno del Mesero en Pausa</h3>
             <p style="margin: 10px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600;">
                 Tu terminal de despacho está temporalmente en pausa. Presiona el botón para reanudar tu turno.
             </p>
             <button onclick="pausarReanudarJornadaMesero()" style="width: 100%; background: #27AE60; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
-                ▶️ Reanudar Jornada
+                ▶️ Reanudar Turno
             </button>
         </div>
     </div>
@@ -569,7 +569,7 @@
 
         function agregarProductoMesero(name, price, categoria) {
             if (!jornadaMeseroActiva) {
-                mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Jornada' antes de agregar productos.", "Jornada Cerrada");
+                mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Turno' antes de agregar productos.", "Turno Cerrado");
                 return;
             }
 
@@ -657,7 +657,7 @@
 
         async function enviarPedidoMeseroACocina(btn) {
             if (!jornadaMeseroActiva) {
-                mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Jornada' antes de enviar pedidos a Cocina.", "Jornada Cerrada");
+                mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Turno' antes de enviar pedidos a Cocina.", "Turno Cerrado");
                 return;
             }
             if (!mesaElegidaMesero) {
@@ -734,10 +734,10 @@
 
             if (btnJornada) {
                 if (estaAbierta || estaPausada) {
-                    btnJornada.innerText = "🔴 Cerrar Jornada";
+                    btnJornada.innerText = "🔴 Cerrar Turno";
                     btnJornada.style.backgroundColor = "#E67E22";
                 } else {
-                    btnJornada.innerText = "🟢 Iniciar Jornada";
+                    btnJornada.innerText = "🟢 Iniciar Turno";
                     btnJornada.style.backgroundColor = "#27AE60";
                 }
             }
@@ -745,7 +745,7 @@
             if (btnPausar) {
                 if (estaAbierta || estaPausada) {
                     btnPausar.style.display = "inline-block";
-                    btnPausar.innerText = estaPausada ? "▶️ Reanudar Jornada" : "⏸️ Pausar Jornada";
+                    btnPausar.innerText = estaPausada ? "▶️ Reanudar Turno" : "⏸️ Pausar Turno";
                     btnPausar.style.backgroundColor = estaPausada ? "#2980B9" : "#F39C12";
                 } else {
                     btnPausar.style.display = "none";
@@ -790,12 +790,12 @@
 
                     if (data.status === 'success') {
                         actualizarBotonJornadaMeseroUI(true, false);
-                        mostrarAlertaModal("🏃‍♂️ ¡Jornada de Mesero iniciada! Listo para atender mesas.", "¡Turno Iniciado!");
+                        mostrarAlertaModal("🏃‍♂️ ¡Turno de Mesero iniciado! Listo para atender mesas.", "¡Turno Iniciado!");
                     } else {
                         alert("⚠️ No se pudo iniciar jornada de Mesero: " + (data.message || "Error desconocido"));
                     }
                 } else {
-                    if (!confirm("¿Deseas finalizar y cerrar tu Jornada de Mesero?")) return;
+                    if (!confirm("¿Deseas finalizar y cerrar tu Turno de Mesero?")) return;
 
                     const resp = await fetch('/api/caja/cerrar/', {
                         method: 'POST',
@@ -809,7 +809,7 @@
 
                     if (data.status === 'success') {
                         actualizarBotonJornadaMeseroUI(false, false);
-                        mostrarAlertaModal("🏁 Jornada de Mesero finalizada correctamente.", "¡Turno Cerrado!");
+                        mostrarAlertaModal("🏁 Turno de Mesero finalizado correctamente.", "¡Turno Cerrado!");
                     } else {
                         alert("⚠️ No se pudo cerrar jornada de Mesero: " + (data.message || "Error desconocido"));
                     }
@@ -833,7 +833,7 @@
                     const pausada = (data.estado_caja === 'PAUSADA');
                     actualizarBotonJornadaMeseroUI(!pausada, pausada);
                     if (!pausada) {
-                        mostrarAlertaModal("▶️ Jornada reanudada. Terminal lista para operar.", "¡Turno Reanudado!");
+                        mostrarAlertaModal("▶️ Turno reanudado. Terminal lista para operar.", "¡Turno Reanudado!");
                     }
                 }
             } catch (e) {
