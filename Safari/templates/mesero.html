@@ -130,7 +130,15 @@
                 <!-- Notas para Cocina -->
                 <div style="flex-shrink: 0; display: flex; align-items: center; gap: 6px; margin-top: 6px;">
                     <label style="font-size: 11px; font-weight: 800; color: #1E293B; white-space: nowrap;">📝 NOTA:</label>
-                    <input type="text" id="mesero-nota-cocina" maxlength="150" placeholder="ej: Sin mayo / Bien cocido..." style="flex: 1; padding: 5px 8px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 12px;">
+                    <input type="text" 
+                        id="mesero-nota-cocina" 
+                        maxlength="150" 
+                        placeholder="Solo letras, números, punto (.) y coma (,)" 
+                        pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\s,.]+"
+                        title="Solo se permiten letras, números, espacios, punto (.) y coma (,)."
+                        oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s,.]/g, ''); this.setCustomValidity('')"
+                        style="flex: 1; padding: 5px 8px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 12px;">
+
                 </div>
 
                 <!-- Lista de Productos Seleccionados -->
@@ -207,6 +215,7 @@
         let catActivaMesero = 'comidarapida';
         let zonaElegidaMesero = '';
         let mesaElegidaMesero = '';
+        let jornadaMeseroActiva = false; // 🔒 Controla si el mesero inició su turno
 
         window.onload = async function() {
             await sincronizarEstadoDesdeBackend();
@@ -532,14 +541,34 @@
         }
 
         function agregarProductoMesero(name, price, categoria) {
+            if (!jornadaMeseroActiva) {
+                mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Jornada' antes de agregar productos.", "Jornada Cerrada");
+                return;
+            }
+
             const existente = carritoMesero.find(i => i.name === name);
             if (existente) {
+                if (existente.cantidad >= 20) {
+                    mostrarAlertaModal(`⚠️ Máximo 20 unidades de "${name}" por comanda.`, "Límite Alcanzado");
+                    return;
+                }
                 existente.cantidad += 1;
             } else {
                 carritoMesero.push({ name, price, categoria, cantidad: 1 });
             }
             actualizarCarritoMeseroUI();
         }
+
+        function sumarUnidadCarritoMesero(idx) {
+            if (!carritoMesero[idx]) return;
+            if (carritoMesero[idx].cantidad >= 20) {
+                mostrarAlertaModal(`⚠️ Máximo 20 unidades de "${carritoMesero[idx].name}" por comanda.`, "Límite Alcanzado");
+                return;
+            }
+            carritoMesero[idx].cantidad++;
+            actualizarCarritoMeseroUI();
+        }
+
         function actualizarCarritoMeseroUI() {
             const lista = document.getElementById('mesero-carrito-lista');
             const vacio = document.getElementById('mesero-carrito-vacio');
@@ -569,7 +598,7 @@
                     <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                         <button type="button" onclick="carritoMesero[${idx}].cantidad--; if(carritoMesero[${idx}].cantidad<=0) carritoMesero.splice(${idx},1); actualizarCarritoMeseroUI();" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">-</button>
                         <span style="font-weight: 800; font-size: 13px; min-width: 20px; text-align: center;">${item.cantidad}</span>
-                        <button type="button" onclick="carritoMesero[${idx}].cantidad++; actualizarCarritoMeseroUI();" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">+</button>
+                        <button type="button" onclick="sumarUnidadCarritoMesero(${idx})" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer; opacity: ${item.cantidad >= 20 ? '0.4' : '1'};">+</button>
                         <button type="button" onclick="carritoMesero.splice(${idx}, 1); actualizarCarritoMeseroUI();" title="Eliminar toda esta fila" style="width: 24px; height: 24px; border: none; background: #E74C3C; color: white; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 3px;">✕</button>
                     </div>
                 `;
@@ -583,7 +612,11 @@
             actualizarCarritoMeseroUI();
         }
 
-        async function enviarPedidoMeseroACocina(btn) {
+                async function enviarPedidoMeseroACocina(btn) {
+            if (!jornadaMeseroActiva) {
+                mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Jornada' antes de enviar pedidos a Cocina.", "Jornada Cerrada");
+                return;
+            }
             if (!mesaElegidaMesero) {
                 alert('⚠️ Selecciona primero la Zona y la Mesa donde está sentado el cliente.');
                 return;
@@ -594,7 +627,10 @@
             }
         
             const total = carritoMesero.reduce((acc, i) => acc + (i.price * i.cantidad), 0);
-            const nota = document.getElementById('mesero-nota-cocina')?.value.trim() || 'Pedido tomado en Mesa por Garzón';
+            const notaRaw = document.getElementById('mesero-nota-cocina')?.value || '';
+            const notaLimpia = notaRaw.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s,.]/g, '').trim();
+            const nota = notaLimpia || 'Pedido tomado en Mesa por Garzón';
+            
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
         
             if (btn) { btn.disabled = true; btn.innerText = 'Enviando...'; }
@@ -624,7 +660,7 @@
                     carritoMesero = [];
                     if (document.getElementById('mesero-nota-cocina')) document.getElementById('mesero-nota-cocina').value = '';
                     actualizarCarritoMeseroUI();
-                    if (typeof sincronizarMeseroDesdeBackend === 'function') await sincronizarMeseroDesdeBackend();
+                    if (typeof sincronizarEstadoDesdeBackend === 'function') await sincronizarEstadoDesdeBackend();
                     alert(`✅ Pedido enviado a Cocina para Mesa ${mesaElegidaMesero}.`);
                     cambiarVistaMesero('despacho');
                 } else {
@@ -638,10 +674,20 @@
             }
         }
 
-        function actualizarBotonJornadaMeseroUI(estaAbierta, estaPausada = false) {
+
+                function actualizarBotonJornadaMeseroUI(estaAbierta, estaPausada = false) {
+            jornadaMeseroActiva = Boolean(estaAbierta) && !Boolean(estaPausada);
+
             const btnJornada = document.getElementById('btn-jornada-mesero');
             const btnPausar = document.getElementById('btn-pausar-mesero');
             const modalPausa = document.getElementById('modal-pausa-mesero-overlay');
+            const btnEnviarCocina = document.querySelector('button[onclick*="enviarPedidoMeseroACocina"]');
+
+            if (btnEnviarCocina) {
+                btnEnviarCocina.disabled = !jornadaMeseroActiva;
+                btnEnviarCocina.style.opacity = jornadaMeseroActiva ? '1' : '0.45';
+                btnEnviarCocina.style.cursor = jornadaMeseroActiva ? 'pointer' : 'not-allowed';
+            }
 
             if (btnJornada) {
                 if (estaAbierta || estaPausada) {
@@ -667,6 +713,7 @@
                 modalPausa.style.display = estaPausada ? "flex" : "none";
             }
         }
+
 
         async function verificarJornadaMesero() {
             try {
