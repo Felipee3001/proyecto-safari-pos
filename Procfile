@@ -1,1 +1,1 @@
-"web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn ProyectoSafari.wsgi" | Out-File -FilePath Procfile -Encoding ascii
+web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn ProyectoSafari.wsgi --bind 0.0.0.0:$PORT
