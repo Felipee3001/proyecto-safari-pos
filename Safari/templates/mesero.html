@@ -104,7 +104,7 @@
 
                 <!-- Buscador Rápido -->
                 <div style="flex-shrink: 0; position: relative;">
-                    <input type="text" id="buscador-productos-mesero" oninput="renderProductosTomaPedidoMesero()" placeholder="🔍 Buscar producto rápido..." style="width: 100%; padding: 9px 14px; border-radius: 10px; border: 2px solid #CBD5E1; background: rgba(255,255,255,0.96); font-size: 13px; font-weight: 600; color: #1E293B; box-sizing: border-box;">
+                    <input type="text" id="buscador-productos-mesero" oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s]/g, ''); renderProductosTomaPedidoMesero();" placeholder="🔍 Buscar producto rápido..." style="width: 100%; padding: 9px 14px; border-radius: 10px; border: 2px solid #CBD5E1; background: rgba(255,255,255,0.96); font-size: 13px; font-weight: 600; color: #1E293B; box-sizing: border-box;">
                 </div>
 
                 <!-- Cuadrícula de Productos -->

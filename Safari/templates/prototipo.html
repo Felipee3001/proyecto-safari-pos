@@ -125,7 +125,7 @@
                     <input 
                         type="text" 
                         id="buscador-productos-ventas" 
-                        oninput="buscarProductosEnTiempoReal(this.value)" 
+                        oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s]/g, ''); buscarProductosEnTiempoReal(this.value);" 
                         placeholder="Buscar producto por nombre (ej: Hamburguesa, Jugo, León)..." 
                         style="width: 100%; padding: 9px 36px 9px 34px; border-radius: 10px; border: 2px solid #CBD5E1; background: rgba(255, 255, 255, 0.96); font-size: 13px; font-weight: 600; color: #1E293B; outline: none; box-shadow: 0 3px 8px rgba(0,0,0,0.18); box-sizing: border-box;"
                     >
