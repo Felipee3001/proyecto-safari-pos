@@ -1,0 +1,11 @@
+SET FOREIGN_KEY_CHECKS = 0 ;
+TRUNCATE TABLE `safari_db`.`safari_pedido`;
+SET FOREIGN_KEY_CHECKS = 1 ;
+
+SET FOREIGN_KEY_CHECKS = 0 ;
+TRUNCATE TABLE `safari_db`.`safari_producto`;
+SET FOREIGN_KEY_CHECKS = 1 ;
+
+SET FOREIGN_KEY_CHECKS = 0 ;
+TRUNCATE TABLE `safari_db`.`safari_mesa`;
+SET FOREIGN_KEY_CHECKS = 1 ;

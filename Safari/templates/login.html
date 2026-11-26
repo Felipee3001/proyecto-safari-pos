@@ -1,0 +1,143 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parque Safari - Control de Acceso</title>
+    <link href="{% static 'css/login.css' %}?v=1.3" rel="stylesheet">
+</head>
+<body class="safari-login-body">
+    <!-- RECONEXIÓN DINÁMICA -->
+    <div class="login-master-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div style="display: flex; justify-content: center;">
+                    <img src="{% static 'img/logo_safari.png' %}" alt="Logo Parque Safari" class="login-logo-safari">
+                </div>
+                <h2>PARQUE SAFARI</h2>
+                <p>Control de Acceso Autorizado</p>
+            </div>
+            <!-- Alertas de Django -->
+            {% if error %}
+                <div class="error-alert">
+                    {{ error }}
+                </div>
+            {% endif %}
+            <form id="login-local-form" method="POST" action="{% url 'login' %}" onsubmit="return validarFormularioLogin(event)">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Nombre de Usuario</label>
+                    <!-- VALIDACIÓN DE CARACTERES ESPECIALES -->
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        class="form-control"
+                        placeholder="ej: f.nunez"
+                        maxlength="100"
+                        pattern="[A-Za-z0-9._-]+"
+                        title="Solo letras, números, punto, guion y guion bajo. Sin espacios."
+                        oninput="this.value = this.value.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase(); this.setCustomValidity('')"
+                        required
+                        autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña de Red</label>
+                    <div style="position: relative; width: 100%;">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-control"
+                            placeholder="••••••••"
+                            pattern="[A-Za-z0-9_.\-@]+"
+                            title="Solo letras, números y los símbolos: _ . - @"
+                            oninput="this.value = this.value.replace(/[^a-zA-Z0-9_.\-@]/g, ''); this.setCustomValidity('')"
+                            required
+                            style="padding-right: 40px !important;"
+                            autocomplete="current-password">
+                        <button
+                            type="button"
+                            onclick="toggleMostrarContrasenaLogin()"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; z-index: 10;">
+                            <span id="ojo-icono-login">👁️</span>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">
+                    Iniciar Sesión
+                </button>
+            </form>
+            <div class="roles-grid">
+                {% for emp in empleados_login %}
+                    <div class="role-credential {% if not emp.activo and emp.rol != 'Administrador' %}role-disabled{% endif %}"
+                         data-user="{{ emp.user }}"
+                         data-pass="{{ emp.pass_plain }}"
+                         data-rol="{{ emp.rol }}"
+                         onclick="cargarCredencialesDesdeTarjeta(this)">
+                        <strong>{{ emp.nombre }}</strong>
+                        <span>
+                            {% if not emp.activo and emp.rol != 'Administrador' %}
+                                🚫 Deshabilitado ({{ emp.rol }})
+                            {% else %}
+                                {{ emp.rol }}
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cargarCredencialesDesdeTarjeta(elemento) {
+            var user = elemento.getAttribute('data-user') || '';
+            var pass = elemento.getAttribute('data-pass') || '';
+            var rol = elemento.getAttribute('data-rol') || '';
+            cargarCredenciales(user, pass, rol);
+        }
+
+        function cargarCredenciales(user, pass, rol) {
+            var inputUser = document.getElementById('username');
+            var inputPass = document.getElementById('password');
+
+            inputUser.value = user;
+            inputPass.value = pass;
+
+            if (rol) {
+                sessionStorage.setItem('usuario_rol', rol);
+            }
+        }
+
+        function toggleMostrarContrasenaLogin() {
+            var inputPass = document.getElementById('password');
+            var icono = document.getElementById('ojo-icono-login');
+
+            if (!inputPass || !icono) return;
+
+            if (inputPass.type === 'password') {
+                inputPass.type = 'text';
+                icono.innerText = '🙈';
+            } else {
+                inputPass.type = 'password';
+                icono.innerText = '👁️';
+            }
+        }
+
+        // Validación de seguridad antes de enviar el formulario a Django
+        function validarFormularioLogin(event) {
+            var inputPass = document.getElementById('password');
+            var regexPermitidos = /^[a-zA-Z0-9_.\-@]+$/;
+
+            if (!regexPermitidos.test(inputPass.value)) {
+                event.preventDefault();
+                alert("⚠️ La contraseña solo permite letras, números y los símbolos: _ . - @");
+                inputPass.focus();
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

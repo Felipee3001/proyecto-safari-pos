@@ -1,0 +1,675 @@
+/* --- ESTILOS DE IDENTIDAD CORPORATIVA --- */
+:root {
+    --primary-color: #126d08;    
+    --secondary-color: #ff4800;  
+    --bg-color: #4b4b4b;         
+    --dark-color: #704626;       
+    --white: #d1cfcb;
+    --success-color: #2ECC71;    
+    --text-dark: #1E293B;
+    --border-color: #CBD5E1;
+    --danger-color: #E74C3C;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    margin: 0 !important;
+    background-color: #1e293b !important; /* Color de respaldo mientras carga */
+    position: relative !important;
+}
+
+body::before {
+    content: "" !important;
+    position: fixed !important;
+    inset: -10px !important; /* Evita bordes blancos en las esquinas al difuminar */
+    background-image: url('/static/img/fondo_login3.jpg') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    filter: blur(4px) !important; /* Ajusta este número: 5px suave, 8px medio, 12px muy borroso */
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Vaciamos de forma transparente cualquier contenedor estructural intermedio */
+.app-container, 
+.main-content, 
+.pos-container, 
+.views-container, main,
+.grid-products-wrapper,
+#catalogo-seccion,
+div[class*="container"],
+.mesas-layout,
+.kds-container {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+.cart-section {
+    background-color: rgba(255, 255, 255, 0.96) !important;
+    border-radius: 35px !important;
+    padding: 20px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    border-top: 14px solid var(--success-color) !important;
+    height: calc(100vh - 125px) !important;
+    max-height: 750px !important;
+    box-sizing: border-box !important;
+}
+
+
+/* --- CONTENEDOR CANVAS TOTALMENTE TRANSLÚCIDO --- */
+.safari-canvas {
+    width: 100%;
+    max-width: 1920px;
+    min-height: 100vh;
+    background-color: transparent !important;
+    color: var(--dark-color);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    border-radius: 8px;
+    overflow: hidden;
+    backdrop-filter: blur(2px); 
+}
+
+/* --- LINK DE INICIO --- */
+.brand-link {
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.brand-link:hover {
+    transform: scale(0.96);
+    opacity: 0.90;
+}
+
+.brand-link:active {
+    transform: scale(0.92);
+}
+
+/* --- NOTIFICACIÓN FLOTANTE ÉXITO --- */
+.notificacion-safari-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translate(-50%);
+    background-color: var(--primary-color); 
+    color: white;
+    padding: 15px 25px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-weight: bold;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideDownToast 0.3s ease forwards;
+}
+
+@keyframes slideDownToast {
+    from { transform: translate(-50%, -100px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+@keyframes fadeInPage { to { opacity: 2; } }
+
+/* --- VIDEO DE FONDO RESPALDO --- */
+.video-fondo-safari {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover; 
+    z-index: -2;
+}
+
+/* --- BARRA DE NAVEGACIÓN SUPERIOR --- */
+.navbar-simulador {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 999;
+    background-color: #5e3015d8;
+    color: var(--white);
+    padding: 15px 30px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid var(--secondary-color);
+    gap: 20px; 
+}
+
+.navbar-simulador .brand { 
+    font-size: 25px; 
+    font-weight: bold; 
+    color: #f7cea5; 
+} 
+
+.navbar-simulador .brand span { color: #f7cea5; }
+.navbar-logo-safari { height: 60px; width: auto; object-fit: contain; }
+
+.nav-tabs { 
+    display: flex; 
+    gap: 15px; 
+    margin-left: auto; 
+}            
+
+.tab-btn {
+    background-color: rgba(255,255,255,0.1);
+    color: var(--white);
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover, .tab-btn.active { background-color: var(--primary-color); }
+
+.btn-logout-top {
+    background-color: #C0392B;
+    color: var(--white);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 14px;
+    white-space: nowrap; 
+    transition: background-color 0.2s ease;
+}
+
+.btn-logout-top:hover { 
+    background-color: #5f0b03; 
+}
+
+/* --- CONTENEDOR DE PANTALLAS TABS --- */
+.view-content { 
+    display: none; 
+    flex: 1; 
+    padding: 25px; 
+}
+
+.view-content.active { display: flex; }
+
+/* =====================================
+   🧱 2. PANTALLA: TERMINAL DE VENTAS 
+   ===================================== */
+.ventas-container {
+    display: grid !important;
+    grid-template-columns: 1.25fr 1fr !important;
+    gap: 35px !important; /* Aumenta o reduce este valor según qué tanta separación quieras */
+    width: 100% !important;
+}
+.catalog-section { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; }
+.categories-bar { 
+    display: flex; 
+    gap: 10px; 
+    overflow-x: auto; 
+    white-space: nowrap; 
+    padding-bottom: 5px; 
+    -webkit-overflow-scrolling: touch; }
+
+.category-pill {
+    background-color: #a7d87f !important; 
+    border: 5px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 12px 25px;
+    border-radius: 30px;
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.category-pill:hover {
+    background-color: #1E8449 !important; 
+    color: #FFFFFF !important;            
+    border-color: #1E8449 !important;     
+}
+
+.category-pill.active {
+    background-color: var(--primary-color) !important;
+    color: var(--white) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.grid-products {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    width: 100% !important;
+}
+
+
+.product-card {
+    background-color: #FFFFFF !important; 
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+    border: 5px solid #edffde !important;
+    cursor: pointer;
+    height: 160px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-4px); 
+    box-shadow: 0 8px 20px rgba(18, 109, 8, 0.15) !important; 
+    border-color: #348b2a !important; 
+    background-color: #73af73 !important; 
+}
+
+.product-card:active {
+    transform: translateY(-1px);
+    background-color: #EAF2F8 !important;
+}        
+
+.product-card h4 { font-size: 18px; margin-bottom: 10px; color: var(--text-dark); }
+.product-card .price { color: var(--primary-color); font-weight: bold; font-size: 22px; }
+
+.checkout-actions .btn-action {
+    flex: 1 !important; /* 🌟 Hace que ambos botones midan exactamente el 50% del contenedor */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important; /* Espaciado interno entre el texto y el emoji */
+    padding: 12px 8px !important; /* Padding equilibrado para evitar saltos de línea */
+    font-size: 14px !important;
+    font-weight: bold !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    white-space: nowrap !important; /* 🌟 Prohíbe de forma estricta que el texto se parta en dos líneas */
+    text-overflow: ellipsis !important;
+    transition: all 0.2s ease !important;
+}          
+.checkout-actions .btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn-submit { background-color: var(--primary-color); color: var(--white); }
+.btn-submit:hover { background-color: #0e5606; }
+.btn-alert { background-color: var(--secondary-color); color: var(--white); }
+.btn-alert:hover { background-color: #8c3f00; }
+.mesas-layout { display: flex; flex-direction: column; width: 100%; gap: 20px; }
+.legend-bar { 
+    display: flex; 
+    gap: 20px; 
+    background-color: rgba(255, 255, 255, 0.92) !important;
+    padding: 15px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border: 1px solid #E2E8F0;
+}
+.legend-item { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--text-dark); }
+.box-color { width: 20px; height: 20px; border-radius: 4px; }
+.grid-mesas { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
+.mesa-card {
+    background-color: #FFFFFF !important; 
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    border-bottom: 8px solid var(--success-color) !important;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+.mesa-card:hover { transform: translateY(-3px); }
+.mesa-card.ocupada { border-bottom-color: var(--secondary-color) !important; }
+.mesa-card h3 { font-size: 26px; margin-bottom: 10px; color: var(--text-dark); }
+.kds-container { 
+    display: flex !important; 
+    justify-content: center !important; 
+    align-items: flex-start !important;
+    width: 100% !important; 
+    gap: 30px !important; 
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    flex-wrap: wrap !important; 
+}
+.kds-column { 
+    background-color: rgba(255, 255, 255, 0.4) !important; 
+    border-radius: 12px !important; 
+    padding: 20px !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+    gap: 15px !important; 
+    flex: 5 !important;
+    width: 100% !important;
+    max-width: 90% !important; 
+    min-height: 770px !important; 
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    box-sizing: border-box !important;
+}
+.kds-column-title { 
+    font-size: 20px !important; 
+    font-weight: bold !important; 
+    color: #FFFFFF !important; 
+    padding: 14px !important; 
+    border-radius: 38px !important; 
+    text-align: center !important; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.bg-cocina { background-color: #2980B9; }
+.bg-barra { background-color: #8E44AD; }
+.kds-ticket { 
+    background-color: #FFFFFF !important; 
+    border-radius: 6px; 
+    padding: 15px; 
+    border-left: 6px solid var(--secondary-color) !important; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+    color: var(--text-dark);
+}
+.ticket-header { 
+    display: flex; 
+    justify-content: space-between; 
+    font-weight: bold; 
+    border-bottom: 1px dashed #E2E8F0; 
+    padding-bottom: 8px; 
+    margin-bottom: 10px; 
+}
+
+.ticket-obs { 
+    margin-top: 10px; 
+    background-color: #FFF9E6; 
+    border: 1px solid #FFE0B2; 
+    padding: 8px; 
+    font-size: 14px; 
+    border-radius: 4px; 
+    color: #D35400; 
+}
+/* ===================================================
+   🚨 5. MODAL DE ALERTA CENTRADO CON FECHA Y HORA
+   =================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+}
+.modal-box {
+    background: #FFFFFF;
+    padding: 25px 30px;
+    border-radius: 16px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+    animation: modalPop 0.2s ease-out;
+    color: var(--text-dark);
+}
+@keyframes modalPop {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+/* ========================================================
+   📱 6. REGLAS RESPONSIVAS COMPLETAS (CAJA, MESAS Y COCINA)
+   ======================================================== */
+@media (max-width: 1200px) {
+    html body {
+        height: auto !important;
+        max-height: none !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    html body #ventas {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 12px !important;
+    }
+
+    html body #ventas .ventas-container {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        gap: 18px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    html body #ventas .catalog-section,
+    html body #ventas .cart-section {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        border-radius: 20px !important;
+        margin: 0 !important;
+    }
+
+    html body #ventas .categories-bar {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    html body #ventas .category-pill {
+        flex: 1 1 auto !important;
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        text-align: center !important;
+    }
+
+    html body #ventas .grid-products {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    html body #ventas .product-card {
+        height: auto !important;
+        min-height: 115px !important;
+        padding: 12px 8px !important;
+    }
+
+    html body #ventas .product-card h4 {
+        font-size: 13px !important;
+    }
+
+    html body #ventas .product-card .price {
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 992px) {
+    /* 1. Barra de navegación superior adaptable */
+    html body .navbar-simulador {
+        height: auto !important;
+        min-height: auto !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        text-align: center !important;
+        padding: 15px !important;
+    }
+
+    html body .navbar-simulador .brand {
+        margin: 0 auto !important;
+        font-size: 22px !important;
+    }
+
+    html body .brand-link {
+        margin-right: 0 !important;
+        justify-content: center !important;
+    }
+
+    html body .nav-tabs {
+        width: 100% !important;
+        justify-content: center !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    html body .tab-btn,
+    html body .btn-logout-top {
+        width: 100% !important;
+        margin: 0 !important;
+        text-align: center !important;
+        padding: 12px 15px !important;
+        font-size: 14px !important;
+    }
+
+    /* 2. Respetar SIEMPRE qué vista está oculta por JS (.view-content) */
+    html body .view-content:not([style*="none"]) {
+        display: block !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* 3. Registro de Ventas apilado en móvil */
+    html body #ventas .ventas-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    html body #ventas .catalog-section,
+    html body #ventas .cart-section {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* 4. Pantallas de Preparación (KDS) SOLO cuando #kds está abierto */
+    html body #kds:not([style*="none"]),
+    html body #kds:not([style*="none"]) > div,
+    html body #kds:not([style*="none"]) .kds-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 12px !important;
+        gap: 18px !important;
+        box-sizing: border-box !important;
+    }
+
+    html body #kds .kds-column,
+    html body #kds .kds-cocina-col,
+    html body #kds > div > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 180px !important;
+        overflow: visible !important;
+        margin: 0 !important;
+    }
+
+    html body #container-cocina,
+    html body #container-cocina-mesero,
+    html body #container-cocina-servidos,
+    html body #container-cocina-finalizados,
+    html body #container-barra,
+    html body #container-barra-finalizados {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        overflow-y: visible !important;
+        width: 100% !important;
+    }
+
+    /* 5. Estado de las Mesas en móvil */
+    html body #mesas:not([style*="none"]),
+    html body #mesas .mesas-layout {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    html body #mesas div[style*="repeat(13"],
+    html body #barra-letras-mesas,
+    html body #zonas-mesas-bar {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 5px !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    html body #mesas div[style*="repeat(13"] button,
+    html body #barra-letras-mesas button,
+    html body #zonas-mesas-bar button {
+        padding: 7px 2px !important;
+        font-size: 11px !important;
+        min-width: 0 !important;
+    }
+
+    html body #mesas .grid-mesas,
+    html body #grid-mesas-estado {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        width: 100% !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+
+    html body #mesas .mesa-card,
+    html body #grid-mesas-estado > div {
+        padding: 14px 6px !important;
+        min-width: 0 !important;
+    }
+
+    html body #mesas .mesa-card h3,
+    html body #grid-mesas-estado h3 {
+        font-size: 16px !important;
+    }
+}

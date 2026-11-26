@@ -1,0 +1,762 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Móvil Mesero - Parque Safari</title>
+    <link href="{% static 'css/mesero.css' %}?v=1.3" rel="stylesheet">
+</head>
+<body style="height: 100vh; max-height: 100vh; overflow: hidden; margin: 0; box-sizing: border-box;">
+    {% csrf_token %}
+    <div class="navbar-simulador">
+
+        <!-- BOTÓN DE REFRESCO EN EL LOGO -->
+        <a onclick="window.location.reload();" class="brand-link" style="text-decoration: none; display: inline-flex; align-items: center; margin-right: 5px;">
+            <img src="{% static 'img/logo_safari.png' %}" class="navbar-logo-safari" alt="Logo Parque Safari" style="cursor: pointer;">
+        </a>
+
+        <div class="brand">PARQUE <span> SAFARI</span></div>
+        <div class="nav-tabs">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="tab-mesero-despacho" onclick="cambiarVistaMesero('despacho')" style="background: #27AE60; color: white; border: 2px solid #F7CEA5; padding: 8px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px;">
+                    🏃‍♂️ Despacho y Mesas
+                </button>
+                <button type="button" id="tab-mesero-pedido" onclick="cambiarVistaMesero('pedido')" style="background: rgba(15, 23, 42, 0.75); color: #F7CEA5; border: 1px solid #F7CEA5; padding: 8px 14px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px;">
+                    📝 Tomar Pedido en Mesa
+                </button>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- BOTÓN 1: Iniciar / Cerrar Jornada Mesero -->
+            <button id="btn-jornada-mesero" class="btn-nav" onclick="gestionarJornadaMesero()" style="background-color: #27AE60; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                🟢 Iniciar Jornada
+            </button>
+
+            <!-- BOTÓN 2: Pausar / Reanudar Jornada Mesero -->
+            <button id="btn-pausar-mesero" class="btn-nav" onclick="pausarReanudarJornadaMesero()" style="display: none; background-color: #F39C12; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                ⏸️ Pausar Jornada
+            </button>
+
+            <!-- BOTÓN 3: Cerrar Sesión con modal elegante -->
+            <button class="btn-logout-top" onclick="abrirModalLogoutMesero(event)" style="background-color: #C0392B; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                CERRAR SESIÓN 🔓
+            </button>
+        </div>
+    </div>
+
+    <div id="monitor-mesero-movil" style="width: 100%; height: calc(100vh - 95px); max-height: calc(100vh - 95px); overflow: hidden; padding: 12px 20px; box-sizing: border-box; display: flex; flex-direction: column;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; margin: 0 auto; gap: 14px; overflow: hidden;">
+            
+            <!-- ENCABEZADO COMPACTO -->
+            <div style="flex-shrink: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 14px 25px; border-radius: 16px; border-bottom: 5px solid #2ECC71; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 98%; max-width: 1350px; box-sizing: border-box;">
+                <h3 style="color: #F7CEA5; font-size: 21px; font-weight: 800; margin: 0;">🏃‍♂️ Terminal de Despacho y Alertas para Meseros</h3>
+                <p style="color: #2ECC71; font-size: 12px; font-weight: bold; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 1.5px;">📡 Sincronización de Comandas en Tiempo Real</p>
+            </div>
+            
+            <!-- CONTENEDOR DE 2 CATEGORÍAS ENCUADRADAS SIN SCROLL DE PÁGINA -->
+            <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 20px; width: 98%; max-width: 1350px; justify-content: center; align-items: stretch; overflow: hidden; min-height: 0;">
+                
+                <!-- CATEGORÍA 1: PEDIDOS LISTOS EN COCINA -->
+                <div style="flex: 1; min-width: 320px; height: 100%; display: flex; flex-direction: column; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(8px); padding: 15px; border-radius: 16px; border-top: 5px solid #2ECC71; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; overflow: hidden;">
+                    <h4 style="flex-shrink: 0; color: #F7CEA5; margin: 0 0 12px 0; text-align: center; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">
+                        🔔 1. PEDIDOS LISTOS (ENTREGAR EN MESA)
+                    </h4>
+                    <div id="lista-alertas-mesero" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; align-content: start !important;">
+                        <div id="no-alertas-msg" class="mesero-alerta-vacia" style="grid-column: 1 / -1; min-height: 165px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; box-sizing: border-box;">
+                            <span class="badge-status">📡 Sistema Sincronizado</span>
+                            <div>🎉 Todo al día: No tienes comandas listas para retirar en el mostrador del Parque Safari.</div>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- CATEGORÍA 2: SERVIDOS EN CONSUMO (LIBERAR MESA) -->
+                <div style="flex: 1; min-width: 320px; height: 100%; display: flex; flex-direction: column; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(8px); padding: 15px; border-radius: 16px; border-top: 5px solid #E67E22; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; overflow: hidden;">
+                    <h4 style="flex-shrink: 0; color: #F7CEA5; margin: 0 0 12px 0; text-align: center; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">
+                        🍽️ 2. SERVIDOS EN MESA (LIBERAR MESA)
+                    </h4>
+                    <div id="lista-mesas-consumo-mesero" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; align-content: start;">
+                        <div class="mesero-alerta-vacia" style="grid-column: 1 / -1; min-height: 165px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; box-sizing: border-box;">
+                            <span class="badge-status" style="background: rgba(230, 126, 34, 0.2); color: #F5B041; border-color: #E67E22;">📡 Monitor Activo</span>
+                            <div>🍽️ No hay mesas servidas o en consumo actualmente.</div>
+                        </div>
+                    </div>
+                </div>
+            
+            </div>
+        </div>
+    </div>
+    <!-- =======================================================================
+     VISTA 2 DEL MESERO: TOMAR PEDIDO EN MESA Y ENVIAR A COCINA
+     ======================================================================= -->
+    <div id="vista-mesero-tomar-pedido" style="display: none; width: 100%; height: calc(100vh - 95px); max-height: calc(100vh - 95px); overflow: hidden; padding: 12px 20px; box-sizing: border-box;">
+        <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; width: 100%; height: 100%; max-width: 1400px; margin: 0 auto; overflow: hidden;">
+
+            <!-- COLUMNA IZQUIERDA: CATEGORÍAS + BUSCADOR + PRODUCTOS -->
+            <div style="display: flex; flex-direction: column; gap: 10px; height: 100%; overflow: hidden;">
+                <!-- Pestañas de Categoría -->
+                <div style="flex-shrink: 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="mesero-cat-pill active" onclick="filtrarCatMesero('comidarapida', this)" style="padding: 8px 14px; border-radius: 20px; border: 2px solid #F7CEA5; background: #1E293B; color: #F7CEA5; font-weight: 800; cursor: pointer; font-size: 13px;">🍔 Comida Rápida</button>
+                    <button type="button" class="mesero-cat-pill" onclick="filtrarCatMesero('bebestibles', this)" style="padding: 8px 14px; border-radius: 20px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 800; cursor: pointer; font-size: 13px;">🥤 Bebestibles</button>
+                    <button type="button" class="mesero-cat-pill" onclick="filtrarCatMesero('souvenirs', this)" style="padding: 8px 14px; border-radius: 20px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 800; cursor: pointer; font-size: 13px;">🧸 Souvenirs</button>
+                </div>
+
+                <!-- Buscador Rápido -->
+                <div style="flex-shrink: 0; position: relative;">
+                    <input type="text" id="buscador-productos-mesero" oninput="renderProductosTomaPedidoMesero()" placeholder="🔍 Buscar producto rápido..." style="width: 100%; padding: 9px 14px; border-radius: 10px; border: 2px solid #CBD5E1; background: rgba(255,255,255,0.96); font-size: 13px; font-weight: 600; color: #1E293B; box-sizing: border-box;">
+                </div>
+
+                <!-- Cuadrícula de Productos -->
+                <div id="grid-productos-toma-mesero" style="flex: 1; overflow-y: auto; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px); padding: 12px; border-radius: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; align-content: start;"></div>
+            </div>
+
+            <!-- COLUMNA DERECHA: SELECCIÓN DE MESA + CARRITO DEL MESERO -->
+            <div style="background: #FFFFFF; border-radius: 14px; padding: 14px 18px; display: flex; flex-direction: column; height: 100%; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.25); box-sizing: border-box;">
+                <div style="flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
+                    <h3 style="margin: 0; font-size: 17px; color: #1E293B;">📝 Comanda para Cocina</h3>
+                    <span id="mesero-badge-mesa" style="padding: 3px 10px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; font-weight: 800; font-size: 12px; color: #C0392B;">Sin mesa</span>
+                </div>
+
+                <!-- Matriz Compacta de Zonas (A-Z) y Mesas -->
+                <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                    <label style="font-size: 11px; font-weight: 800; color: #C0392B;">* Seleccione Zona y Mesa del Cliente *</label>
+                    <div id="mesero-grid-zonas" style="display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; background: #F8FAFC; padding: 4px; border-radius: 6px; border: 1px solid #E2E8F0;"></div>
+                    <div id="mesero-grid-mesas" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px;">
+                        <div style="grid-column: 1 / -1; text-align: center; font-size: 11px; color: #64748B; padding: 4px; background: #F8FAFC; border-radius: 6px;">Toque una letra de Zona arriba</div>
+                    </div>
+                </div>
+
+                <!-- Notas para Cocina -->
+                <div style="flex-shrink: 0; display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                    <label style="font-size: 11px; font-weight: 800; color: #1E293B; white-space: nowrap;">📝 NOTA:</label>
+                    <input type="text" id="mesero-nota-cocina" maxlength="150" placeholder="ej: Sin mayo / Bien cocido..." style="flex: 1; padding: 5px 8px; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 12px;">
+                </div>
+
+                <!-- Lista de Productos Seleccionados -->
+                <div style="flex: 1; overflow-y: auto; margin-top: 8px; padding: 6px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;">
+                    <div id="mesero-carrito-lista" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    <p id="mesero-carrito-vacio" style="text-align: center; color: #64748B; font-size: 13px; margin-top: 20px; font-weight: 600;">Toque productos a la izquierda para agregar</p>
+                </div>
+
+                <!-- Total y Botón Enviar a Cocina -->
+                <div style="flex-shrink: 0; border-top: 2px solid #E2E8F0; padding-top: 8px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">
+                        <span>Total Estimado:</span>
+                        <span id="mesero-carrito-total">$0</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" onclick="limpiarCarritoMesero()" style="flex: 0.4; background: #E74C3C; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 13px;">Limpiar 🗑️</button>
+                        <button type="button" onclick="enviarPedidoMeseroACocina(this)" style="flex: 1; background: #27AE60; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 14px;">🚀 Enviar a Cocina</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- MODAL DE ALERTA DE ÉXITO INTEGRADO -->
+    <div id="custom-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.55); z-index: 99999; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; padding: 25px 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+            <div id="modal-icono" style="font-size: 36px; margin-bottom: 8px;">✅</div>
+            <h3 id="modal-titulo" style="margin: 0 0 10px 0; color: #2C3E50; font-size: 20px; font-weight: bold;">¡Servicio Completado!</h3>
+            <p id="modal-mensaje-texto" style="font-size: 15px; color: #34495E; margin: 10px 0; font-weight: 600;"></p>
+            <p id="modal-fechahora-texto" style="font-size: 13px; color: #7F8C8D; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #E2E8F0;"></p>
+        </div>
+    </div>
+
+    <!-- MODAL DE JORNADA PAUSADA MESERO -->
+    <div id="modal-pausa-mesero-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(6px); z-index: 99997; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; padding: 30px; border-radius: 16px; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); color: #1e293b;">
+            <div style="font-size: 45px; margin-bottom: 10px;">⏸️</div>
+            <h3 style="margin: 0; color: #D68910; font-size: 22px; font-weight: 800;">Jornada del Mesero en Pausa</h3>
+            <p style="margin: 10px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600;">
+                Tu terminal de despacho está temporalmente en pausa. Presiona el botón para reanudar tu turno.
+            </p>
+            <button onclick="pausarReanudarJornadaMesero()" style="width: 100%; background: #27AE60; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                ▶️ Reanudar Jornada
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL PERSONALIZADO DE CONFIRMACIÓN DE CIERRE DE SESIÓN -->
+    <div id="modal-confirmar-logout-mesero" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #FFFFFF; border-radius: 18px; width: 100%; max-width: 400px; padding: 28px 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.35); border-top: 6px solid #C0392B;">
+            <div style="width: 60px; height: 60px; background: #FEF2F2; color: #C0392B; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 14px auto; border: 2px solid #FECACA;">
+                🔓
+            </div>
+            <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 800; color: #1E293B;">¿Cerrar Sesión?</h3>
+            <p style="margin: 0 0 22px 0; font-size: 14px; color: #64748B; line-height: 1.45;">
+                Estás a punto de salir de la <strong>Terminal de Meseros</strong>. Tendrás que volver a ingresar tus credenciales.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" onclick="document.getElementById('modal-confirmar-logout-mesero').style.display='none'" style="flex: 1; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" onclick="sessionStorage.clear(); localStorage.clear(); window.location.href='/logout/';" style="flex: 1; background: #C0392B; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer;">
+                    Sí, Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let carritoMesero = [];
+        let catActivaMesero = 'comidarapida';
+        let zonaElegidaMesero = '';
+        let mesaElegidaMesero = '';
+
+        window.onload = async function() {
+            await sincronizarEstadoDesdeBackend();
+            await verificarJornadaMesero();
+
+            setInterval(async function() {
+                await sincronizarEstadoDesdeBackend();
+                await verificarJornadaMesero();
+            }, 3000);
+        };
+
+        async function sincronizarEstadoDesdeBackend() {
+            try {
+                const response = await fetch('/api/estado-general/');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    window.ultimoEstadoBackend = data;
+                    renderAlertasCelularMesero();
+                }
+            } catch (error) { 
+                console.error("Error consultando la API:", error); 
+            }
+        }
+        function renderAlertasCelularMesero() {
+            const contenedorListos = document.getElementById('lista-alertas-mesero');
+            const contenedorConsumo = document.getElementById('lista-mesas-consumo-mesero');
+            if (!contenedorListos) return;
+            const data = window.ultimoEstadoBackend || {};
+            const listaListos = data.pedidos_mesero || [];
+            const listaConsumo = data.pedidos_mesero_consumo || [];
+
+            // 1. PINTAR CATEGORÍA 1: PEDIDOS LISTOS PARA RETIRAR DE COCINA
+            if (listaListos.length === 0) {
+                contenedorListos.innerHTML = `
+                    <div id="no-alertas-msg" class="mesero-alerta-vacia" style="grid-column: 1 / -1; min-height: 165px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; box-sizing: border-box;">
+                        <span class="badge-status">📡 Sistema Sincronizado</span>
+                        <div>🎉 Todo al día: No tienes comandas listas para retirar en el mostrador del Parque Safari.</div>
+                    </div>`;
+            } else {
+                contenedorListos.innerHTML = '';
+                listaListos.forEach(function(p) {
+                    const div = document.createElement('div');
+                    div.className = 'mesero-ticket-card';
+                    div.style.margin = '0';
+                    div.style.padding = '12px';
+                
+                    const itemsHTML = (p.items || []).map(item => 
+                        `<li style="padding: 4px 0; border-bottom: 1px dashed #E2E8F0; color: #334155; font-weight: 600; font-size: 13px; list-style: none; display: flex; justify-content: space-between;">
+                            <span>🟢 ${item.nombre}</span>
+                            <span style="color: #2ECC71; font-weight: 800;">x${item.cantidad}</span>
+                        </li>`
+                    ).join('');
+                    
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 6px; margin-bottom: 4px;">
+                            <span style="font-weight: 800; background: #E8F8F5; color: #117A65; padding: 3px 8px; border-radius: 20px; font-size: 12px;">🔔 ¡Listo!</span>
+                            <span style="font-size: 11px; color: #64748B; font-weight: 700;">📋 Ticket #${p.numero_ticket}</span>
+                        </div>
+                        <p style="font-size: 14px; color: #1E293B; font-weight: 700; margin: 4px 0;">
+                            📍 Ubicación: <span style="color: #E67E22; font-size: 17px; font-weight: 800;">Mesa ${p.mesa}</span>
+                        </p>
+                        <div class="mesero-item-box" style="padding: 8px; margin: 4px 0;"><ul style="padding-left: 0; margin: 0;">${itemsHTML}</ul></div>
+                        <button class="mesero-btn-entregar" onclick="entregarPedidoMeseroReal(this, ${p.id}, '${p.mesa}', 'servir')" style="margin-top: 6px; padding: 8px; width: 100%; background-color: #27AE60; font-size: 13px;">
+                            <span>🏃‍♂️ Entregar en Mesa</span>
+                        </button>
+                    `;
+                    contenedorListos.appendChild(div);
+                });
+            }
+        
+            // 2. PINTAR CATEGORÍA 2: SERVIDOS EN MESA (PARA LIBERAR MESA)
+            if (contenedorConsumo) {
+                if (listaConsumo.length === 0) {
+                    contenedorConsumo.innerHTML = `
+                        <div class="mesero-alerta-vacia" style="grid-column: 1 / -1; min-height: 165px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; box-sizing: border-box;">
+                            <span class="badge-status" style="background: rgba(230, 126, 34, 0.2); color: #F5B041; border-color: #E67E22;">📡 Monitor Activo</span>
+                            <div>🍽️ No hay mesas servidas o en consumo actualmente.</div>
+                        </div>`;
+                } else {
+                    contenedorConsumo.innerHTML = '';
+                    listaConsumo.forEach(function(p) {
+                        const div = document.createElement('div');
+                        div.className = 'mesero-ticket-card';
+                        div.style.margin = '0';
+                        div.style.padding = '12px';
+                        div.style.borderLeft = "6px solid #E67E22";
+                    
+                        const itemsHTML = (p.items || []).map(item => 
+                            `<li style="padding: 4px 0; border-bottom: 1px dashed #E2E8F0; color: #334155; font-weight: 600; font-size: 13px; list-style: none; display: flex; justify-content: space-between;">
+                                <span>🍽️ ${item.nombre}</span>
+                                <span style="color: #E67E22; font-weight: 800;">x${item.cantidad}</span>
+                            </li>`
+                        ).join('');
+                        
+                        div.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 6px; margin-bottom: 4px;">
+                                <span style="font-weight: 800; background: #FEF5E7; color: #D35400; padding: 3px 8px; border-radius: 20px; font-size: 12px;">🍽️ En Consumo</span>
+                                <span style="font-size: 11px; color: #64748B; font-weight: 700;">📋 Ticket #${p.numero_ticket}</span>
+                            </div>
+                            <p style="font-size: 14px; color: #1E293B; font-weight: 700; margin: 4px 0;">
+                                📍 Mesa: <span style="color: #C0392B; font-size: 17px; font-weight: 800;">Mesa ${p.mesa}</span>
+                            </p>
+                            <div class="mesero-item-box" style="padding: 8px; margin: 4px 0;"><ul style="padding-left: 0; margin: 0;">${itemsHTML}</ul></div>
+                            <div style="display: flex; gap: 6px; margin-top: 6px;">
+                                <button class="mesero-btn-entregar" onclick="entregarPedidoMeseroReal(this, ${p.id}, '${p.mesa}', 'liberar')" style="flex: 1; padding: 8px 6px; background-color: #27AE60; font-size: 12px; margin: 0;">
+                                    <span>🔓 Liberar Mesa ${p.mesa}</span>
+                                </button>
+                                <button class="mesero-btn-entregar" onclick="solicitarDevolucionCocina(${p.id}, '${p.mesa}', ${p.numero_ticket})" style="flex: 1; padding: 8px 6px; background-color: #C0392B; font-size: 12px; margin: 0;">
+                                    <span>↩️ Devolver a Cocina</span>
+                                </button>
+                            </div>
+                        `;
+                        contenedorConsumo.appendChild(div);
+                    });
+                }
+            }
+        }
+        async function entregarPedidoMeseroReal(botonHtml, idPedido, numeroMesa, accion = 'servir') {
+            const tarjetaAlerta = botonHtml.closest('.mesero-ticket-card');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+            try {
+                const response = await fetch('/api/mesero/entregar/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ 
+                        pedido_id: idPedido, 
+                        mesa_numero: numeroMesa,
+                        accion: accion
+                    })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    if (tarjetaAlerta) {
+                        tarjetaAlerta.style.transition = 'all 0.3s ease';
+                        tarjetaAlerta.style.opacity = '0';
+                        tarjetaAlerta.style.transform = 'scale(0.9) translateY(10px)';
+                        setTimeout(() => tarjetaAlerta.remove(), 300);
+                    }
+                    const tituloModal = (accion === 'servir') ? '¡Plato Servido en Mesa!' : '¡Mesa Liberada!';
+                    mostrarAlertaModal(data.message, tituloModal);
+                    setTimeout(async () => await sincronizarEstadoDesdeBackend(), 400);
+                }
+            } catch (error) { 
+                console.error("Error al procesar acción del mesero:", error); 
+            }
+        }
+
+        async function solicitarDevolucionCocina(idPedido, numeroMesa, numeroTicket) {
+            const nota = prompt(`↩️ Devolver Ticket #${numeroTicket} (Mesa ${numeroMesa}) a Cocina.\n\nEscribe el motivo o instrucción para el cocinero (ej: Falta calentar, sin cebolla):`);
+
+            // Si el mesero presiona "Cancelar", no hace nada
+            if (nota === null) return;
+
+            const motivoLimpio = nota.trim();
+            if (!motivoLimpio) {
+                alert("⚠️ Por favor escribe una breve nota indicando qué debe corregir o calentar la cocina.");
+                return;
+            }
+        
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+                const response = await fetch('/api/mesero/entregar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        pedido_id: idPedido,
+                        mesa: numeroMesa,
+                        accion: 'devolver',
+                        nota_devolucion: motivoLimpio
+                    })
+                });
+            
+                const resData = await response.json();
+                if (resData.status === 'success') {
+                    if (typeof sincronizarMeseroDesdeBackend === 'function') {
+                        await sincronizarMeseroDesdeBackend();
+                    }
+                } else {
+                    alert("Error al devolver pedido: " + (resData.message || 'Intente nuevamente'));
+                }
+            } catch (error) {
+                console.error("Error devolviendo pedido a cocina:", error);
+            }
+        }
+
+        function mostrarAlertaModal(mensaje, titulo = '¡Servicio Completado!') {
+            const overlay = document.getElementById('custom-modal-overlay');
+            const txtTitulo = document.getElementById('modal-titulo');
+            if (overlay) {
+                if (txtTitulo) txtTitulo.innerText = titulo;
+                document.getElementById('modal-mensaje-texto').innerText = mensaje;
+                const ahora = new Date();
+                document.getElementById('modal-fechahora-texto').innerHTML = `📅 <strong>Fecha:</strong> ${ahora.toLocaleDateString('es-CL')} | ⏰ <strong>Hora:</strong> ${ahora.toLocaleTimeString('es-CL')}`;
+                overlay.style.display = 'flex';
+                setTimeout(() => overlay.style.display = 'none', 1800);
+            }
+        }
+
+        function cambiarVistaMesero(vista) {
+            const vistaDespacho = document.getElementById('monitor-mesero-movil');
+            const vistaPedido = document.getElementById('vista-mesero-tomar-pedido');
+            const btnDespacho = document.getElementById('tab-mesero-despacho');
+            const btnPedido = document.getElementById('tab-mesero-pedido');
+
+            if (vista === 'pedido') {
+                if (vistaDespacho) vistaDespacho.style.display = 'none';
+                if (vistaPedido) vistaPedido.style.display = 'block';
+                if (btnPedido) { btnPedido.style.background = '#27AE60'; btnPedido.style.color = '#FFF'; btnPedido.style.border = '2px solid #F7CEA5'; }
+                if (btnDespacho) { btnDespacho.style.background = 'rgba(15, 23, 42, 0.75)'; btnDespacho.style.color = '#F7CEA5'; btnDespacho.style.border = '1px solid #F7CEA5'; }
+                renderProductosTomaPedidoMesero();
+                renderZonasYMesasTomaPedido();
+            } else {
+                if (vistaPedido) vistaPedido.style.display = 'none';
+                if (vistaDespacho) vistaDespacho.style.display = 'flex';
+                if (btnDespacho) { btnDespacho.style.background = '#27AE60'; btnDespacho.style.color = '#FFF'; btnDespacho.style.border = '2px solid #F7CEA5'; }
+                if (btnPedido) { btnPedido.style.background = 'rgba(15, 23, 42, 0.75)'; btnPedido.style.color = '#F7CEA5'; btnPedido.style.border = '1px solid #F7CEA5'; }
+            }
+        }
+        function filtrarCatMesero(cat, btn) {
+            catActivaMesero = cat;
+            const input = document.getElementById('buscador-productos-mesero');
+            if (input) input.value = '';
+            document.querySelectorAll('.mesero-cat-pill').forEach(b => {
+                b.style.background = '#FFFFFF';
+                b.style.color = '#1E293B';
+                b.style.border = '1px solid #CBD5E1';
+            });
+            if (btn) {
+                btn.style.background = '#1E293B';
+                btn.style.color = '#F7CEA5';
+                btn.style.border = '2px solid #F7CEA5';
+            }
+            renderProductosTomaPedidoMesero();
+        }
+
+        function renderProductosTomaPedidoMesero() {
+            const grid = document.getElementById('grid-productos-toma-mesero');
+            if (!grid) return;
+            const data = window.ultimoEstadoBackend || {};
+            const productos = data.productos || [];
+            const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+            const filtro = normalizar(document.getElementById('buscador-productos-mesero')?.value);
+        
+            grid.innerHTML = '';
+            productos.forEach(p => {
+                const nombre = p.name || p.nombre || '';
+                const precio = Number(p.price || p.precio || 0);
+                const cat = (p.categoria || 'comidarapida').toLowerCase().trim();
+            
+                const coincide = filtro ? normalizar(nombre).includes(filtro) : (cat === catActivaMesero);
+                if (!coincide) return;
+            
+                const card = document.createElement('div');
+                card.style.cssText = 'background: #FFFFFF; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.15); border-bottom: 4px solid #27AE60; display: flex; flex-direction: column; justify-content: space-between;';
+                card.onclick = () => agregarProductoMesero(nombre, precio, cat);
+                card.innerHTML = `
+                    <div style="font-weight: 800; font-size: 13px; color: #1E293B; margin-bottom: 6px;">${nombre}</div>
+                    <div style="font-weight: 800; font-size: 15px; color: #27AE60;">$${precio.toLocaleString('es-CL')}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderZonasYMesasTomaPedido() {
+            const gridZonas = document.getElementById('mesero-grid-zonas');
+            const gridMesas = document.getElementById('mesero-grid-mesas');
+            if (!gridZonas || !gridMesas) return;
+        
+            const data = window.ultimoEstadoBackend || {};
+            const mesas = data.mesas || [];
+            const ocupadas = data.mesas_ocupadas || [];
+            const letras = [...new Set(mesas.map(m => (m.numero || '').toString().trim().toUpperCase().charAt(0)).filter(l => /^[A-Z]$/.test(l)))].sort();
+        
+            gridZonas.innerHTML = '';
+            letras.forEach(letra => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerText = letra;
+                const activa = (letra === zonaElegidaMesero);
+                btn.style.cssText = `padding: 4px 0; border-radius: 4px; font-weight: 800; font-size: 11px; cursor: pointer; border: 1px solid ${activa ? '#1E8449' : '#CBD5E1'}; background: ${activa ? '#27AE60' : '#FFF'}; color: ${activa ? '#FFF' : '#334155'};`;
+                btn.onclick = () => {
+                    zonaElegidaMesero = letra;
+                    renderZonasYMesasTomaPedido();
+                };
+                gridZonas.appendChild(btn);
+            });
+        
+            if (!zonaElegidaMesero) return;
+        
+            const mesasZona = mesas
+                .filter(m => (m.numero || '').toString().trim().toUpperCase().startsWith(zonaElegidaMesero))
+                .sort((a, b) => (parseInt(a.numero.replace(/\D/g, ''), 10) || 0) - (parseInt(b.numero.replace(/\D/g, ''), 10) || 0));
+        
+            gridMesas.innerHTML = '';
+            mesasZona.forEach(m => {
+                const num = m.numero.toString().trim().toUpperCase();
+                const esElegida = (num === mesaElegidaMesero);
+                const estaOcupada = ocupadas.includes(num);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerText = num;
+                btn.style.cssText = `padding: 5px 0; border-radius: 5px; font-weight: 800; font-size: 11px; cursor: pointer; border: 1px solid ${esElegida ? '#1E8449' : (estaOcupada ? '#D35400' : '#CBD5E1')}; background: ${esElegida ? '#27AE60' : (estaOcupada ? '#FDEBD0' : '#FFF')}; color: ${esElegida ? '#FFF' : (estaOcupada ? '#A04000' : '#1E293B')};`;
+                btn.onclick = () => {
+                    mesaElegidaMesero = num;
+                    const badge = document.getElementById('mesero-badge-mesa');
+                    if (badge) {
+                        badge.innerText = 'Mesa ' + num;
+                        badge.style.background = '#E8F8F5';
+                        badge.style.color = '#117A65';
+                        badge.style.borderColor = '#A3E4D7';
+                    }
+                    renderZonasYMesasTomaPedido();
+                };
+                gridMesas.appendChild(btn);
+            });
+        }
+
+        function agregarProductoMesero(name, price, categoria) {
+            const existente = carritoMesero.find(i => i.name === name);
+            if (existente) {
+                existente.cantidad += 1;
+            } else {
+                carritoMesero.push({ name, price, categoria, cantidad: 1 });
+            }
+            actualizarCarritoMeseroUI();
+        }
+        function actualizarCarritoMeseroUI() {
+            const lista = document.getElementById('mesero-carrito-lista');
+            const vacio = document.getElementById('mesero-carrito-vacio');
+            const totalEl = document.getElementById('mesero-carrito-total');
+            if (!lista || !totalEl) return;
+
+            lista.innerHTML = '';
+            let total = 0;
+
+            if (carritoMesero.length === 0) {
+                if (vacio) vacio.style.display = 'block';
+                totalEl.innerText = '$0';
+                return;
+            }
+            if (vacio) vacio.style.display = 'none';
+        
+            carritoMesero.forEach((item, idx) => {
+                const sub = item.price * item.cantidad;
+                total += sub;
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 6px 10px; border-radius: 6px; border: 1px solid #E2E8F0; gap: 6px;';
+                row.innerHTML = `
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; font-size: 13px; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                        <div style="font-size: 11px; color: #27AE60; font-weight: 700;">$${sub.toLocaleString('es-CL')}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                        <button type="button" onclick="carritoMesero[${idx}].cantidad--; if(carritoMesero[${idx}].cantidad<=0) carritoMesero.splice(${idx},1); actualizarCarritoMeseroUI();" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">-</button>
+                        <span style="font-weight: 800; font-size: 13px; min-width: 20px; text-align: center;">${item.cantidad}</span>
+                        <button type="button" onclick="carritoMesero[${idx}].cantidad++; actualizarCarritoMeseroUI();" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">+</button>
+                        <button type="button" onclick="carritoMesero.splice(${idx}, 1); actualizarCarritoMeseroUI();" title="Eliminar toda esta fila" style="width: 24px; height: 24px; border: none; background: #E74C3C; color: white; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 3px;">✕</button>
+                    </div>
+                `;
+                lista.appendChild(row);
+            });
+            totalEl.innerText = '$' + total.toLocaleString('es-CL');
+        }
+
+        function limpiarCarritoMesero() {
+            carritoMesero = [];
+            actualizarCarritoMeseroUI();
+        }
+
+        async function enviarPedidoMeseroACocina(btn) {
+            if (!mesaElegidaMesero) {
+                alert('⚠️ Selecciona primero la Zona y la Mesa donde está sentado el cliente.');
+                return;
+            }
+            if (carritoMesero.length === 0) {
+                alert('⚠️ Agrega al menos un producto antes de enviar a Cocina.');
+                return;
+            }
+        
+            const total = carritoMesero.reduce((acc, i) => acc + (i.price * i.cantidad), 0);
+            const nota = document.getElementById('mesero-nota-cocina')?.value.trim() || 'Pedido tomado en Mesa por Garzón';
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        
+            if (btn) { btn.disabled = true; btn.innerText = 'Enviando...'; }
+        
+            try {
+                const resp = await fetch('/api/pedido/guardar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        productos: carritoMesero,
+                        total: total,
+                        mesa_numero: mesaElegidaMesero,
+                        modalidad_entrega: 'MESA',
+                        observaciones: nota
+                    })
+                });
+                if (!resp.ok) {
+                    const textoError = await resp.text();
+                    alert(`❌ Error HTTP ${resp.status} al enviar a Cocina.\nRevisa la ruta en urls.py:\n${textoError.substring(0, 150)}`);
+                    return;
+                }
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    carritoMesero = [];
+                    if (document.getElementById('mesero-nota-cocina')) document.getElementById('mesero-nota-cocina').value = '';
+                    actualizarCarritoMeseroUI();
+                    if (typeof sincronizarMeseroDesdeBackend === 'function') await sincronizarMeseroDesdeBackend();
+                    alert(`✅ Pedido enviado a Cocina para Mesa ${mesaElegidaMesero}.`);
+                    cambiarVistaMesero('despacho');
+                } else {
+                    alert('❌ Error del servidor: ' + (data.message || 'No se pudo enviar el pedido.'));
+                }
+            } catch (e) {
+                console.error('Error enviando pedido del mesero:', e);
+                alert('❌ Error de conexión con Django: ' + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = '🚀 Enviar a Cocina'; }
+            }
+        }
+
+        function actualizarBotonJornadaMeseroUI(estaAbierta, estaPausada = false) {
+            const btnJornada = document.getElementById('btn-jornada-mesero');
+            const btnPausar = document.getElementById('btn-pausar-mesero');
+            const modalPausa = document.getElementById('modal-pausa-mesero-overlay');
+
+            if (btnJornada) {
+                if (estaAbierta || estaPausada) {
+                    btnJornada.innerText = "🔴 Cerrar Jornada";
+                    btnJornada.style.backgroundColor = "#E67E22";
+                } else {
+                    btnJornada.innerText = "🟢 Iniciar Jornada";
+                    btnJornada.style.backgroundColor = "#27AE60";
+                }
+            }
+
+            if (btnPausar) {
+                if (estaAbierta || estaPausada) {
+                    btnPausar.style.display = "inline-block";
+                    btnPausar.innerText = estaPausada ? "▶️ Reanudar Jornada" : "⏸️ Pausar Jornada";
+                    btnPausar.style.backgroundColor = estaPausada ? "#2980B9" : "#F39C12";
+                } else {
+                    btnPausar.style.display = "none";
+                }
+            }
+
+            if (modalPausa) {
+                modalPausa.style.display = estaPausada ? "flex" : "none";
+            }
+        }
+
+        async function verificarJornadaMesero() {
+            try {
+                const res = await fetch('/api/caja/verificar-estado/?rol=Mesero');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    actualizarBotonJornadaMeseroUI(!data.necesita_apertura, data.esta_pausada);
+                }
+            } catch (e) {
+                console.error("Error verificando jornada mesero:", e);
+            }
+        }
+
+        async function gestionarJornadaMesero() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+            try {
+                const resEstado = await fetch('/api/caja/verificar-estado/?rol=Mesero');
+                const estado = await resEstado.json();
+
+                if (estado.necesita_apertura) {
+                    const resp = await fetch('/api/caja/abrir/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ monto_apertura: 0, rol: 'Mesero' })
+                    });
+                    const data = await resp.json();
+
+                    if (data.status === 'success') {
+                        actualizarBotonJornadaMeseroUI(true, false);
+                        mostrarAlertaModal("🏃‍♂️ ¡Jornada de Mesero iniciada! Listo para atender mesas.", "¡Turno Iniciado!");
+                    } else {
+                        alert("⚠️ No se pudo iniciar jornada de Mesero: " + (data.message || "Error desconocido"));
+                    }
+                } else {
+                    if (!confirm("¿Deseas finalizar y cerrar tu Jornada de Mesero?")) return;
+
+                    const resp = await fetch('/api/caja/cerrar/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ rol: 'Mesero', solo_turno_operativo: true })
+                    });
+                    const data = await resp.json();
+
+                    if (data.status === 'success') {
+                        actualizarBotonJornadaMeseroUI(false, false);
+                        mostrarAlertaModal("🏁 Jornada de Mesero finalizada correctamente.", "¡Turno Cerrado!");
+                    } else {
+                        alert("⚠️ No se pudo cerrar jornada de Mesero: " + (data.message || "Error desconocido"));
+                    }
+                }
+            } catch (e) {
+                console.error("Error gestionando jornada mesero:", e);
+                alert("❌ Error de conexión con el servidor al gestionar la jornada.");
+            }
+        }
+
+        async function pausarReanudarJornadaMesero() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            try {
+                const resp = await fetch('/api/caja/pausar/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ rol: 'Mesero' })
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    const pausada = (data.estado_caja === 'PAUSADA');
+                    actualizarBotonJornadaMeseroUI(!pausada, pausada);
+                    if (!pausada) {
+                        mostrarAlertaModal("▶️ Jornada reanudada. Terminal lista para operar.", "¡Turno Reanudado!");
+                    }
+                }
+            } catch (e) {
+                console.error("Error pausando jornada mesero:", e);
+            }
+        }
+
+        function abrirModalLogoutMesero(e) {
+            if (e) e.preventDefault();
+            const m = document.getElementById('modal-confirmar-logout-mesero');
+            if (m) m.style.display = 'flex';
+        }
+
+    </script>
+</body>
+</html>

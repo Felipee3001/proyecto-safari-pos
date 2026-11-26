@@ -1,0 +1,436 @@
+/* ==========================================================================
+   ESTILOS DEL PANEL ADMINISTRATIVO - PARQUE SAFARI (PARTE 1 DE 2)
+   ========================================================================== */
+
+:root {
+    --primary-color: #198647;
+    --primary-dark: #145A32;
+    --accent-orange: #E67E22;
+    --accent-red: #C0392B;
+    --safari-gold: #F7CEA5;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --border-light: #E2E8F0;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url('/static/img/fondo_login3.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--text-main);
+}
+
+/* ==========================================================================
+   TARJETAS Y ESTRUCTURA DE PANELES
+   ========================================================================== */
+.card,
+.admin-section {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 20px 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+}
+
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: 330px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+/* ==========================================================================
+   FORMULARIOS E INPUTS
+   ========================================================================== */
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 5px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1E293B;
+    background-color: #FFFFFF;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15);
+}
+
+/* ==========================================================================
+   TABLAS Y ENCABEZADOS FIJOS (STICKY SIN FILTRACIONES)
+   ========================================================================== */
+.table-responsive {
+    width: 100%;
+    padding-top: 0 !important;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    background: #FFFFFF;
+}
+
+.table-responsive table {
+    width: 100%;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    margin-top: 0 !important;
+}
+
+.table-responsive thead,
+.table-responsive thead tr,
+.table-responsive thead th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #F8FAFC !important;
+    z-index: 50 !important;
+}
+
+.table-responsive th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 8px 6px !important;
+    border-bottom: 2px solid var(--border-light);
+    white-space: nowrap;
+}
+
+.table-responsive td {
+    padding: 8px 6px !important;
+    font-size: 12px !important;
+    color: #1E293B;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+    white-space: nowrap !important;
+}
+
+.table-responsive tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+/* ==========================================================================
+   COLORES UNIFICADOS DE BOTONES EN ACCIONES DE PERSONAL
+   ========================================================================== */
+
+/* 1. Botón Editar: Amarillo opaco con letra blanca */
+#tabla-empleados-admin td:last-child button:first-child {
+    background-color: #0db6d4 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    border: none !important;
+}
+
+#tabla-empleados-admin td:last-child button:first-child:hover {
+    background-color: #005e7a !important;
+}
+
+/* Botón Mostrando En Login: Morado claro opaco + hover más oscuro */
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#8e44ad" i],
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#520641" i] {
+    background-color: #8E44AD !important;
+    color: #FFFFFF !important;
+    transition: background-color 0.15s ease !important;
+}
+
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#8e44ad" i]:hover,
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#520641" i]:hover {
+    background-color: #6C3483 !important;
+}
+
+/* Botón Oculto En Login: Rojo opaco + hover más oscuro */
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#a93226" i],
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#ff0000" i] {
+    background-color: #A93226 !important;
+    color: #FFFFFF !important;
+    transition: background-color 0.15s ease !important;
+}
+
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#a93226" i]:hover,
+#tabla-empleados-admin td:last-child button[onclick*="toggleMostrarEnLogin"][style*="#ff0000" i]:hover {
+    background-color: #7B241C !important;
+}
+
+/* Botón Editar: Celeste */
+#tabla-empleados-admin td:last-child button[onclick*="cargarEmpleadoEnFormulario"] {
+    background-color: #0db6d4 !important;
+    color: #FFFFFF !important;
+}
+
+/* Botón Deshabilitar: Naranja opaco + hover más oscuro */
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#ca6f1e" i],
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#e67e22" i] {
+    background-color: #CA6F1E !important;
+    color: #FFFFFF !important;
+    transition: background-color 0.15s ease !important;
+}
+
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#ca6f1e" i]:hover,
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#e67e22" i]:hover {
+    background-color: #A04000 !important;
+}
+
+/* Botón Habilitar: Verde opaco + hover más oscuro */
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#1e8449" i],
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#27ae60" i] {
+    background-color: #1E8449 !important;
+    color: #FFFFFF !important;
+    transition: background-color 0.15s ease !important;
+}
+
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#1e8449" i]:hover,
+#tabla-empleados-admin td:last-child button[onclick*="toggleEstadoEmpleado"][style*="#27ae60" i]:hover {
+    background-color: #145A32 !important;
+}
+
+
+/* ==========================================================================
+   BADGES DE ROLES Y ESTADOS (PARTE 2 DE 2)
+   ========================================================================== */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #FFFFFF;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.bg-admin {
+    background-color: #1E293B;
+}
+
+.bg-cajero {
+    background-color: #2980B9;
+}
+
+.bg-cocina {
+    background-color: #8E44AD;
+}
+
+.bg-mesero {
+    background-color: #34495E;
+}
+
+.bg-activo {
+    background-color: #27AE60;
+}
+
+.bg-inactivo {
+    background-color: #E74C3C;
+}
+
+/* ==========================================================================
+   CHECKBOXES DE SEGMENTACIÓN POR TERMINAL
+   ========================================================================== */
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.checkbox-group label:hover {
+    border-color: var(--primary-color);
+    background: #F0FDF4;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   📱 REGLAS RESPONSIVAS COMPLETAS PARA PANEL ADMINISTRATIVO (MÓVIL / TABLET)
+   ========================================================================== */
+@media (max-width: 1100px) {
+    /* 1. Liberar altura fija y habilitar scroll vertical natural */
+    html body {
+        height: auto !important;
+        max-height: none !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-bottom: 24px !important;
+    }
+
+    /* 2. Encabezado y barra de navegación al 95% de ancho */
+    html body .admin-header,
+    html body #admin-nav-tabs,
+    html body .admin-container {
+        width: 95% !important;
+        max-width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    html body .admin-header {
+        padding: 16px !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    html body .admin-header > div {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    html body #admin-nav-tabs .admin-tab-btn {
+        width: 100% !important;
+        min-width: 100% !important;
+        flex: none !important;
+    }
+
+    /* 3. Encerrar tarjetas principales sin desbordes laterales */
+    html body .card,
+    html body .admin-section {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        padding: 16px !important;
+    }
+
+    /* 4. Apilar columnas internas SIN forzar display en las secciones principales */
+    html body #sec-personal > div:last-child,
+    html body #sec-productos > div:last-child,
+    html body #sec-mesas > div:last-child {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        gap: 18px !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+
+    /* Apilar las dos tarjetas de Fiados y Terminales SOLO cuando la pestaña está abierta */
+    html body #sec-fiados-seg:not([style*="none"]) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+
+
+    /* 5. Contenedores internos y buscadores 100% encuadrados dentro del fondo blanco */
+    html body #sec-personal > div:last-child > div,
+    html body #sec-personal > div:last-child > div:last-child > div:first-child,
+    html body #sec-personal > div:last-child > div:last-child > div:first-child > div,
+    html body #sec-productos > div:last-child > div,
+    html body #sec-mesas > div:last-child > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    html body #sec-personal > div:last-child > div:last-child > div:first-child {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    html body #sec-personal input,
+    html body #sec-personal select,
+    html body #sec-productos input,
+    html body #sec-productos select,
+    html body #sec-mesas input,
+    html body #sec-mesas select {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 6. Tablas con fondo blanco y desplazamiento horizontal interno limpio */
+    html body .table-responsive {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 380px !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        box-sizing: border-box !important;
+        background: #FFFFFF !important;
+    }
+
+    /* 7. Cuentas Fiado y Segmentación por Terminal */
+    html body #sec-fiados-seg .card,
+    html body #sec-fiados-seg .admin-section {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        padding: 18px !important;
+    }
+
+    html body #form-nuevo-fiado {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    html body #form-nuevo-fiado button {
+        width: 100% !important;
+        height: 40px !important;
+    }
+
+    html body #sec-fiados-seg .card > div:last-child {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 8. Inventario y Productos en móvil */
+    html body #grid-productos-admin {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+        max-height: 420px !important;
+        overflow-y: auto !important;
+    }
+
+    /* 9. Mesas del Parque en móvil */
+    html body #barra-letras-admin {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 5px !important;
+    }
+
+    html body #grid-mesas-admin {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        max-height: 400px !important;
+        overflow-y: auto !important;
+    }
+}

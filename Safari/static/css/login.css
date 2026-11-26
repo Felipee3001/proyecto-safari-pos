@@ -1,0 +1,230 @@
+/* ========================================================
+   🦁 CONFIGURACIÓN DE LIENZO BASE DE PARQUE SAFARI
+   ======================================================== */
+
+:root {
+    --primary-color: #15aa33;
+    --secondary-color: #E67E22;
+    --white: #ffffff;
+    --text-dark: #2C3E50;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body, .safari-login-body {
+    margin: 0 !important;
+    padding: 16px !important;
+    min-height: 100vh !important;
+    background-image: url("/static/img/fondo_guepardo.jpg") !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    color: var(--text-dark) !important;
+    overflow-x: hidden !important;
+}
+
+/* 4. RESPONSIVIDAD (🖥️ Pantallas de Escritorio) */
+@media (min-width: 992px) {
+    body, .safari-login-body {
+        flex-direction: row !important;
+        justify-content: flex-start !important; /* Empuja el contenedor a la izquierda */
+        align-items: center !important;
+    }
+
+    .login-master-container {
+        align-items: flex-start !important; /* Alinea la tarjeta al inicio del bloque */
+        padding-left: 8% !important; /* Separación elegante respecto al borde del monitor */
+    }
+}
+
+/* ========================================================
+   ✨ TARJETA DE CRISTAL TRANSLÚCIDA CON INTERIOR LEGIBLE
+   ======================================================== */
+.login-card {
+    background-color: rgba(255, 255, 255, 0.315) !important; /* Resalta sobre el guepardo */
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    width: 650px !important;
+    padding: 40px 30px !important;
+    border-radius: 24px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Encabezado interno */
+.login-header {
+    text-align: center !important;
+    margin-bottom: 30px !important;
+}
+.login-logo-safari {
+    height: 90px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    margin-bottom: 15px !important;
+}
+.login-header h2 {
+    font-size: 26px !important;
+    color: var(--text-dark) !important;
+    font-weight: 800 !important;
+    letter-spacing: 1px !important;
+}
+.login-header p {
+    font-size: 14px !important;
+    color: #64748B !important;
+    margin-top: 4px !important;
+    font-weight: 600 !important;
+}
+
+/* Formularios y campos de texto */
+.form-group {
+    margin-bottom: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+.form-group label {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--text-dark) !important;
+}
+.form-control {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
+    border: 1px solid #CBD5E1 !important;
+    background-color: #FFFFFF !important;
+    color: var(--text-dark) !important;
+    outline: none !important;
+    transition: border-color 0.2s !important;
+}
+.form-control:focus {
+    border-color: var(--primary-color) !important;
+}
+
+/* Botón Iniciar Sesión */
+.btn-login {
+    width: 100% !important;
+    background-color: var(--primary-color) !important;
+    color: var(--white) !important;
+    border: none !important;
+    padding: 14px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s, transform 0.1s !important;
+    margin-top: 10px !important;
+    margin-bottom: 24px !important;
+}
+
+.btn-login:hover {
+    background-color: #118227 !important;
+}
+.btn-login:active {
+    transform: scale(0.98) !important;
+}
+
+/* Alertas de error */
+.error-alert {
+    background-color: #FEE2E2 !important;
+    color: #991B1B !important;
+    padding: 12px !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    margin-bottom: 20px !important;
+    border: 1px solid #FCA5A5 !important;
+}
+
+/* ========================================================
+   📊 REJILLA DE ROLES DINÁMICA (USUARIOS ENCARGADOS)
+   ======================================================== */
+.roles-helper {
+    margin-top: 30px !important;
+    border-top: 1px solid #E2E8F0 !important;
+    padding-top: 20px !important;
+}
+.roles-helper h4 {
+    font-size: 13px !important;
+    color: #160101 !important;
+    text-align: center !important;
+    margin-bottom: 15px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+.roles-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+@media (min-width: 992px) {
+    .roles-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+.roles-grid .role-credential {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 10px 4px !important; 
+    background: #FFFFFF !important; 
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 10px !important; 
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-align: center !important;
+}
+.roles-grid .role-credential:hover {
+    background: #F8FAFC !important;
+    border-color: var(--secondary-color) !important; 
+    transform: translateY(-2px) !important;
+}
+.roles-grid .role-credential strong { 
+    display: block !important; 
+    color: var(--text-dark) !important; 
+    font-size: 11.5px !important; 
+    font-weight: 700 !important;
+}
+.roles-grid .role-credential span { 
+    display: block !important;
+    color: #64748B !important; 
+    font-size: 9px !important; 
+    margin-top: 2px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    width: 100% !important;
+}
+
+.roles-grid .role-credential.role-disabled {
+    background: #FEE2E2 !important;
+    background-color: #FEE2E2 !important;
+    border: 2px solid #EF4444 !important;
+    color: #991B1B !important;
+}
+
+.roles-grid .role-credential.role-disabled strong,
+.roles-grid .role-credential.role-disabled span {
+    color: #991B1B !important;
+}
+
+.roles-grid {
+    gap: 10px !important;
+}

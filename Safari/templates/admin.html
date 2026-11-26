@@ -1,0 +1,1147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo - Parque Safari</title>
+    <link href="{% static 'css/admin.css' %}?v=3.5" rel="stylesheet">
+</head>
+<body style="height: 100vh; max-height: 100vh; overflow: hidden; margin: 0;">
+    {% csrf_token %}
+
+    <!-- ENCABEZADO PRINCIPAL -->
+    <div class="admin-header" style="width: 97%; max-width: 1750px; margin: 12px auto 0 auto; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); padding: 14px 24px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 4px solid #E67E22; box-shadow: 0 12px 28px rgba(0,0,0,0.28);">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="{% static 'img/logo_safari.png' %}" alt="Logo Parque Safari" style="height: 50px; border-radius: 10px; border: 2px solid #F7CEA5;">
+            <div>
+                <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #F7CEA5;">Panel Administrativo Parque Safari</h1>
+                <p style="margin: 2px 0 0 0; font-size: 13px; color: #2ECC71; font-weight: 700;">Gestión de Credenciales y Operativa de Personal</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="/ventas/" style="background: #27AE60; color: #FFFFFF; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 800; font-size: 13px; border: 2px solid #A3E4D7;">
+                Ir al Punto de Ventas! 💸 🦁
+            </a>
+            <button type="button" onclick="abrirModalLogoutAdmin(event)" style="background: #C0392B; color: #FFFFFF; border: 2px solid #FADBD8; padding: 10px 18px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer;">
+                CERRAR SESIÓN 🔓
+            </button>
+        </div>
+    </div>
+    <!-- BARRA DE NAVEGACIÓN RÁPIDA POR PESTAÑAS -->
+    <div id="admin-nav-tabs" style="width: 97%; max-width: 1750px; margin: 12px auto 0 auto; padding: 10px 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border-radius: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.12);">
+        <button type="button" class="admin-tab-btn active" onclick="cambiarSeccionAdmin('sec-personal', this)" style="flex: 1; min-width: 210px; background: #27AE60; color: #FFFFFF; border: 2px solid #F7CEA5; padding: 11px 18px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.15s ease;">
+            👥 Nómina de Personal
+        </button>
+        <button type="button" class="admin-tab-btn" onclick="cambiarSeccionAdmin('sec-fiados-seg', this)" style="flex: 1; min-width: 210px; background: rgba(255,255,255,0.1); color: #F7CEA5; border: 1px solid rgba(247,206,165,0.4); padding: 11px 18px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.15s ease;">
+            💳 Gestión de Cuentas Fiado y Terminales
+        </button>
+        <button type="button" class="admin-tab-btn" onclick="cambiarSeccionAdmin('sec-productos', this)" style="flex: 1; min-width: 210px; background: rgba(255,255,255,0.1); color: #F7CEA5; border: 1px solid rgba(247,206,165,0.4); padding: 11px 18px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.15s ease;">
+            🍔 Gestión de Inventario y Productos
+        </button>
+        <button type="button" class="admin-tab-btn" onclick="cambiarSeccionAdmin('sec-mesas', this)" style="flex: 1; min-width: 210px; background: rgba(255,255,255,0.1); color: #F7CEA5; border: 1px solid rgba(247,206,165,0.4); padding: 11px 18px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.15s ease;">
+            🍽️ Gestión de Mesas del Parque
+        </button>
+    </div>
+
+    <div class="admin-container" style="width: 97%; max-width: 1750px; margin: 12px auto 20px auto; padding: 0;">
+
+        <!-- ========================================================
+             SECCIÓN 1: NÓMINA DE PERSONAL OPERATIVO
+             ======================================================== -->
+        <div id="sec-personal" class="card admin-section admin-section-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                <h2 style="margin: 0; font-size: 18px; color: #1E293B;">👥 Nómina de Personal Operativo</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span id="badge-total-empleados" style="background: #EFF6FF; color: #1D4ED8; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800;">Total: 0</span>
+                    <span id="badge-activos-empleados" style="background: #ECFDF5; color: #047857; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800;">Activos: 0</span>
+                    <span id="badge-inactivos-empleados" style="background: #FEF2F2; color: #B91C1C; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800;">Inactivos: 0</span>
+                </div>
+            </div>
+            <div class="grid-2-cols">
+                <!-- FORMULARIO CONTRATAR / MODIFICAR -->
+                <div id="caja-form-empleado" style="background: #F8FAFC; padding: 18px; border-radius: 12px; border: 1px solid #CBD5E1;">
+                    <h3 id="titulo-form-empleado" style="font-size: 15px; margin: 0 0 14px 0; color: var(--primary-color);">Contratar / Modificar Personal</h3>
+                    <form id="form-empleado" onsubmit="agregarEmpleadoLocal(event)">
+                        <div class="form-group">
+                            <label for="emp-nombre">Nombre Completo</label>
+                            <input type="text"
+                                id="emp-nombre"
+                                class="form-control"
+                                placeholder="ej: Juan Pérez"
+                                maxlength="100"
+                                pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s._\-@]+"
+                                title="Solo se permiten letras, tildes, espacios y los símbolos: . _ - @"
+                                oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü\s._\-@]/g, ''); this.setCustomValidity('')"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="emp-user">Nombre de Usuario</label>
+                            <input type="text" id="emp-user" class="form-control" placeholder="ej: juan.safari"
+                                   maxlength="100" pattern="[A-Za-z0-9._-]+"
+                                   title="Solo letras, números, punto (.), guion (-) y guion bajo (_). Sin espacios."
+                                   autocomplete="off" oninput="this.value = this.value.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase(); this.setCustomValidity('')" required>
+                            <small style="display:block; margin-top:4px; color:#64748b; font-size:11px;">Solo letras y números; también se permiten . _ - (sin espacios).</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="emp-pass">Contraseña de Acceso</label>
+                            <div style="position: relative; width: 100%; box-sizing: border-box;">
+                                <input type="password"
+                                    id="emp-pass"
+                                    class="form-control"
+                                    placeholder="Ingrese Contraseña"
+                                    pattern="[A-Za-z0-9_.\-@]+"
+                                    title="Solo letras, números y los símbolos: _ . - @"
+                                    oninput="this.value = this.value.replace(/[^a-zA-Z0-9_.\-@]/g, ''); this.setCustomValidity('')"
+                                    required
+                                    style="padding-right: 40px !important;">
+                                <button type="button" onclick="toggleMostrarContrasena()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; z-index: 10;" title="Mostrar/Ocultar contraseña">
+                                    <span id="ojo-icono">👁️</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="emp-rol">Asignación de Área (Rol)</label>
+                            <select id="emp-rol" class="form-control" style="cursor: pointer;" required>
+                                <option value="Administrador">Administrador</option>
+                                <option value="Cajero">Cajero</option>
+                                <option value="Cocinero">Cocinero</option>
+                                <option value="Mesero">Mesero</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="btn-enviar-formulario" style="display: block; width: 100%; background-color: #e67e22; color: white; border: none; padding: 11px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                            Registrar Personal
+                        </button>
+                    </form>
+                </div>
+
+                <!-- TABLA DE PERSONAL -->
+                <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+                    <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: #F8FAFC; padding: 8px 12px; border-radius: 10px; border: 1px solid #E2E8F0;">
+                        <div style="position: relative; flex: 1; min-width: 180px;">
+                            <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none;">🔍</span>
+                            <input type="text" id="buscador-empleados-admin" oninput="renderEmpleados()" placeholder="Buscar por nombre o usuario..." style="width: 100%; padding: 6px 10px 6px 28px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 600; color: #1E293B; box-sizing: border-box;">
+                        </div>
+                        <select id="filtro-rol-admin" onchange="renderEmpleados()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 700; color: #334155; background: #FFFFFF; cursor: pointer;">
+                            <option value="TODOS">👥 Todos los Roles</option>
+                            <option value="Administrador">🛡️ Administradores</option>
+                            <option value="Cajero">💰 Cajeros</option>
+                            <option value="Cocinero">🍳 Cocineros</option>
+                            <option value="Mesero">🍽️ Meseros</option>
+                        </select>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 430px; overflow-y: auto; overflow-x: hidden;">
+                        <table id="tabla-empleados-admin">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Usuario</th>
+                                    <th>Contraseña</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-empleados"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ========================================================
+             SECCIÓN 2: CUENTAS FIADO Y SEGMENTACIÓN POR TERMINAL
+             ======================================================== -->
+        <div id="sec-fiados-seg" class="grid-2-cols admin-section-panel" style="display: none; grid-template-columns: 1.2fr 0.8fr !important; gap: 20px !important; align-items: stretch !important; min-height: 500px;">
+            
+            <!-- TARJETA IZQUIERDA: CUENTAS FIADO -->
+            <div class="card admin-section" style="margin: 0; display: flex; flex-direction: column; justify-content: flex-start; min-height: 500px; height: 500px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 17px; color: #1E293B;">💳 Consolidación de Cuentas Fiado</h2>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">Registro y liquidación de consumos internos del personal</p>
+                    </div>
+                    <div style="background: #FEF2F2; border: 1px solid #FECACA; padding: 6px 12px; border-radius: 10px; text-align: right;">
+                        <div style="font-size: 10px; font-weight: 800; color: #991B1B;">DEUDA TOTAL PERSONAL</div>
+                        <div id="total-deuda-fiados" style="font-size: 16px; font-weight: 900; color: #DC2626;">$0</div>
+                    </div>
+                </div>
+
+                <form id="form-nuevo-fiado" onsubmit="registrarConsumoFiado(event)" style="display: grid; grid-template-columns: 1.2fr 1.3fr 0.8fr auto; gap: 10px; align-items: end; background: #F8FAFC; padding: 12px; border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 14px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Empleado Activo</label>
+                        <select id="fiado-empleado-select" class="form-control" style="padding: 8px 10px; font-size: 12px;" required></select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Detalle Consumo</label>
+                        <input type="text" id="fiado-detalle-input" class="form-control" placeholder="ej: Almuerzo + Jugo" style="padding: 8px 10px; font-size: 12px;" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Monto ($)</label>
+                        <input type="number" id="fiado-monto-input" class="form-control" min="1" placeholder="4500" style="padding: 8px 10px; font-size: 12px;" required>
+                    </div>
+                    <button type="submit" style="background: #E67E22; color: #FFF; border: none; padding: 9px 14px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap; height: 35px;">
+                        + Cargar
+                    </button>
+                </form>
+
+                <div class="table-responsive" style="flex: 1; max-height: 330px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>EMPLEADO</th>
+                                <th>ROL</th>
+                                <th>ÚLTIMO CONSUMO</th>
+                                <th>DEUDA</th>
+                                <th>ESTADO</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-fiados"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TARJETA DERECHA: SEGMENTACIÓN POR TERMINAL -->
+            <div class="card admin-section" style="margin: 0; display: flex; flex-direction: column; justify-content: flex-start; min-height: 500px; height: 500px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 17px; color: #1E293B;">🎯 Segmentación por Terminal</h2>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748B;">Define qué categorías del catálogo se muestran y despachan en cada estación.</p>
+                    </div>
+                    <span id="badge-segmentacion-estado" style="background: #E8F8F5; color: #198647; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap;">
+                        ✅ Activo
+                    </span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 8px; flex: 1;">
+                    <div class="terminal-card" style="background: #F8FAFC; padding: 18px; border-radius: 12px; border: 1px solid #CBD5E1; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 14px 0; font-size: 14px; color: #1E293B; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">🏪 Terminal 01 - Caja / Cocina</h4>
+                        <div id="seg-terminal-caja" class="checkbox-group" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                    </div>
+
+                    <div class="terminal-card" style="background: #F8FAFC; padding: 18px; border-radius: 12px; border: 1px solid #CBD5E1; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 14px 0; font-size: 14px; color: #1E293B; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">🍦 Terminal 02 - Barra / Mesón</h4>
+                        <div id="seg-terminal-barra" class="checkbox-group" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ========================================================
+             SECCIÓN 3: INVENTARIO MAESTRO Y GESTIÓN DE PRODUCTOS
+             ======================================================== -->
+        <div id="sec-productos" class="card admin-section admin-section-panel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                <h2 style="margin: 0; font-size: 18px; color: #1E293B;">🍔 Inventario Maestro y Gestión de Productos</h2>
+                <span id="contador-productos-admin" style="background: #F1F5F9; color: #334155; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800;">0 productos</span>
+            </div>
+
+            <div class="grid-2-cols" style="grid-template-columns: 310px minmax(0, 1fr); align-items: stretch !important;">
+                <!-- FORMULARIO AÑADIR / EDITAR PRODUCTO -->
+                <div id="caja-form-producto" style="background: #F8FAFC; padding: 18px; border-radius: 14px; border: 1px solid #CBD5E1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h3 id="form-producto-titulo" style="font-size: 15px; margin: 0; color: #E67E22;">✨ Añadir Nuevo Producto</h3>
+                        <button type="button" id="btn-cancelar-edicion-prod" onclick="cancelarEdicionProducto()" style="display: none; background: #E2E8F0; color: #334155; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">✕ Cancelar</button>
+                    </div>
+                    <form id="form-producto" onsubmit="guardarProductoLocal(event)" style="display: flex; flex-direction: column; flex: 1;">
+                        <div class="form-group">
+                            <label for="prod-nombre">Nombre del Producto</label>
+                            <input type="text" id="prod-nombre" class="form-control" placeholder="ej: Papas Fritas Suprema" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-precio">Precio Unitario ($)</label>
+                            <input type="number" id="prod-precio" class="form-control" min="0" placeholder="ej: 4500" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-categoria">Categoría del Catálogo</label>
+                            <select id="prod-categoria" class="form-control" style="cursor: pointer;" required></select>
+                        </div>
+                        <button type="submit" id="btn-producto-submit" style="margin-top: auto; width: 100%; background: #198647; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                            Registrar Producto
+                        </button>
+                    </form>
+                </div>
+
+                <!-- LISTA DE PRODUCTOS POR CATEGORÍA -->
+                <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #F8FAFC; padding: 8px 12px; border-radius: 10px; border: 1px solid #E2E8F0;">
+                        <div id="barra-categorias-admin" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                        <input type="text" id="buscador-inventario-admin" oninput="renderProductosAdmin()" placeholder="🔍 Filtrar producto..." style="padding: 6px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-size: 12px; font-weight: 600;">
+                    </div>
+
+                    <div id="grid-productos-admin" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: 450px; overflow-y: auto; padding-right: 4px; align-content: start;"></div>
+                </div>
+            </div>
+        </div>
+        <!-- ========================================================
+             SECCIÓN 4: GESTIÓN Y CONFIGURACIÓN DE MESAS DEL PARQUE
+             ======================================================== -->
+        <div id="sec-mesas" class="card admin-section admin-section-panel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                <h2 style="margin: 0; font-size: 18px; color: #1E293B;">🍽️ Gestión y Configuración de Mesas del Parque</h2>
+                <div style="display: flex; gap: 14px; align-items: center; font-size: 12px; font-weight: 800;">
+                    <span style="display: flex; align-items: center; gap: 5px; color: #1E8449;"><span style="width: 10px; height: 10px; background: #27AE60; border-radius: 3px; display: inline-block;"></span> Disponibles</span>
+                    <span style="display: flex; align-items: center; gap: 5px; color: #D35400;"><span style="width: 10px; height: 10px; background: #E67E22; border-radius: 3px; display: inline-block;"></span> En Consumo</span>
+                </div>
+            </div>
+
+                        <div class="grid-2-cols" style="grid-template-columns: 300px minmax(0, 1fr); align-items: stretch !important;">
+                <!-- COLUMNA IZQUIERDA: FORMULARIO CREAR / MODIFICAR -->
+                <div id="caja-form-mesa" style="background: #F8FAFC; padding: 18px; border-radius: 14px; border: 1px solid #CBD5E1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 id="form-mesa-titulo" style="font-size: 15px; margin: 0; color: #1E8449;">Añadir Nueva Mesa</h3>
+                        <button type="button" id="btn-cancelar-edicion-mesa" onclick="cancelarEdicionMesa()" style="display: none; background: #E2E8F0; color: #334155; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">✕ Cancelar</button>
+                    </div>
+                    <p style="font-size: 12px; color: #64748B; margin: 0 0 14px 0; line-height: 1.4;">
+                        El identificador alfanumérico se indexará automáticamente en el POS.
+                    </p>
+                    <form id="form-mesa" onsubmit="guardarMesaLocal(event)" style="display: flex; flex-direction: column; flex: 1;">
+                        <div class="form-group">
+                            <label for="mesa-zona-select">Zona (Letra Obligatoria)</label>
+                            <select id="mesa-zona-select" class="form-control" style="cursor: pointer; font-weight: 700;" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mesa-numero-input">Número de Mesa</label>
+                            <input type="number" id="mesa-numero-input" class="form-control" placeholder="ej: 25" min="1" max="999" required>
+                        </div>
+                        <button type="submit" id="btn-mesa-submit" style="margin-top: auto; width: 100%; background: #198647; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer;">
+                            Registrar Mesa
+                        </button>
+                    </form>
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #E2E8F0; font-size: 11px; color: #64748B; line-height: 1.4;">
+                        💡 <strong>Tip:</strong> Selecciona una zona arriba a la derecha para ver, editar o liberar sus mesas al instante.
+                    </div>
+                </div>
+                <!-- COLUMNA DERECHA: ZONAS A-Z + CUADRÍCULA -->
+                <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+                    <div id="barra-letras-admin" style="background: #F8FAFC; padding: 8px; border-radius: 10px; border: 1px solid #E2E8F0;"></div>
+                    <div id="grid-mesas-admin" style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; max-height: 450px; overflow-y: auto; padding-right: 4px; align-content: start;"></div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Cierra .admin-container -->
+
+    <!-- MODAL DE CONFIRMACIÓN DE CIERRE DE SESIÓN -->
+    <div id="modal-confirmar-logout-admin" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #FFFFFF; border-radius: 18px; width: 100%; max-width: 400px; padding: 28px 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.35); border-top: 6px solid #C0392B;">
+            <div style="width: 60px; height: 60px; background: #FEF2F2; color: #C0392B; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 14px auto; border: 2px solid #FECACA;">
+                🔓
+            </div>
+            <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 800; color: #1E293B;">¿Cerrar Sesión?</h3>
+            <p style="margin: 0 0 22px 0; font-size: 14px; color: #64748B; line-height: 1.45;">
+                Estás a punto de salir del <strong>Panel Administrativo</strong>. Tendrás que volver a ingresar tus credenciales.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" onclick="document.getElementById('modal-confirmar-logout-admin').style.display='none'" style="flex: 1; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" onclick="sessionStorage.clear(); localStorage.clear(); window.location.href='/logout/';" style="flex: 1; background: #C0392B; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer;">
+                    Sí, Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ========================================================
+        // 💾 ESTADO GLOBAL Y UTILIDADES CENTRALIZADAS
+        // ========================================================
+        var idEmpleadoEnEdicion = null;
+        var idProductoEnEdicion = null;
+        var idMesaEnEdicion = null;
+
+        var letraZonaActivaAdmin = 'A';
+        var categoriaActivaAdmin = 'comidarapida';
+
+        var empleados = [];
+        var catalogoMaestro = [];
+        var listaMesasMaestra = [];
+        var cuentasFiado = [];
+        var mesasOcupadasAdmin = [];
+        window.segmentacionTerminales = null;
+
+        function normalizarTexto(s) {
+            return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        }
+
+        // Helper unificado para todas las peticiones POST al backend
+        async function apiAdminPost(url, payload, errorRedMsg) {
+            try {
+                var resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                var data = await resp.json();
+                if (data.status === 'success') {
+                    return data;
+                }
+                alert("⚠️ " + (data.message || "No se pudo completar la operación."));
+                return null;
+            } catch (err) {
+                alert(errorRedMsg || "❌ Error de conexión con el servidor.");
+                return null;
+            }
+        }
+
+        // ========================================================
+        // 📡 CARGA MAESTRA DESDE DJANGO
+        // ========================================================
+        async function actualizarPanelAdminDesdeBackend() {
+            try {
+                var response = await fetch('/api/admin-datos/');
+                var data = await response.json();
+
+                if (data.status === 'success') {
+                    empleados = data.empleados || [];
+                    catalogoMaestro = data.productos || data.productos_admin || [];
+                    listaMesasMaestra = data.mesas || [];
+                    cuentasFiado = data.fiados || [];
+                    mesasOcupadasAdmin = data.mesas_ocupadas || [];
+                    window.segmentacionTerminales = data.segmentacion || null;
+
+                    renderEmpleados();
+                    renderFiados();
+                    renderProductosAdmin();
+                    renderMesasAdmin();
+                    renderSegmentacionDinamica();
+                }
+            } catch (error) {
+                console.error("Error al refrescar panel administrativo:", error);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', actualizarPanelAdminDesdeBackend);
+        setInterval(actualizarPanelAdminDesdeBackend, 5000); 
+
+        function abrirModalLogoutAdmin(e) {
+            if (e) e.preventDefault();
+            var m = document.getElementById('modal-confirmar-logout-admin');
+            if (m) {
+                m.style.display = 'flex';
+            } else {
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/logout/';
+            }
+        }
+        // ========================================================
+        // 👥 RENDERIZADOR DE NÓMINA DE PERSONAL
+        // ========================================================
+        function renderEmpleados() {
+            var totalEmp = empleados.length;
+            var activosEmp = empleados.filter(function(e) { return e.activo === true; }).length;
+            var inactivosEmp = totalEmp - activosEmp;
+
+            var elTot = document.getElementById('badge-total-empleados');
+            var elAct = document.getElementById('badge-activos-empleados');
+            var elIna = document.getElementById('badge-inactivos-empleados');
+            if (elTot) elTot.innerText = 'Total: ' + totalEmp;
+            if (elAct) elAct.innerText = 'Activos: ' + activosEmp;
+            if (elIna) elIna.innerText = 'Inactivos: ' + inactivosEmp;
+
+            var tbody = document.getElementById('lista-empleados');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            var textoFiltro = normalizarTexto(document.getElementById('buscador-empleados-admin')?.value);
+            var rolFiltro = document.getElementById('filtro-rol-admin')?.value || 'TODOS';
+
+            var filtrados = empleados.filter(function(emp) {
+                var coincideTexto = !textoFiltro || normalizarTexto(emp.nombre).includes(textoFiltro) || normalizarTexto(emp.user).includes(textoFiltro);
+                var coincideRol = (rolFiltro === 'TODOS') || (emp.rol === rolFiltro) || (rolFiltro === 'Cocinero' && emp.rol === 'Cocina');
+                return coincideTexto && coincideRol;
+            });
+
+            if (filtrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748B; font-weight: 600;">No se encontraron empleados con ese filtro.</td></tr>';
+                return;
+            }
+
+            filtrados.forEach(function(emp) {
+                var tr = document.createElement('tr');
+                var claseColorRol = 'bg-cajero';
+                if (emp.rol === 'Administrador') claseColorRol = 'bg-admin';
+                else if (emp.rol === 'Cocinero' || emp.rol === 'Cocina') claseColorRol = 'bg-cocina';
+                else if (emp.rol === 'Mesero') claseColorRol = 'bg-mesero';
+
+                var esAdmin = (emp.rol === 'Administrador');
+                var botonEstadoHTML = esAdmin
+                    ? '<span style="font-size: 11px; color: #64748B; font-weight: 700; padding: 5px 8px;">🛡️ Protegido</span>'
+                    : '<button type="button" style="background-color: ' + (emp.activo ? '#CA6F1E' : '#1E8449') + '; padding: 5px 8px; font-size: 11px; border-radius: 4px; border: none; color: white; font-weight: bold; cursor: pointer;" onclick="toggleEstadoEmpleado(' + emp.id + ')">' + (emp.activo ? '🚫 Deshabilitar' : '✅ Habilitar') + '</button>';
+
+                var visibleEnLogin = (emp.mostrar_en_login !== false);
+                var botonLoginHTML = '<button type="button" title="Mostrar u ocultar acceso rápido en pantalla Login" style="background-color: ' + (visibleEnLogin ? '#8E44AD' : '#A93226') + '; padding: 5px 8px; font-size: 11px; border-radius: 4px; border: none; color: white; font-weight: bold; cursor: pointer;" onclick="toggleMostrarEnLogin(' + emp.id + ')">' + (visibleEnLogin ? '👁️ Mostrando En Login' : '🙈 Oculto En Login') + '</button>';
+
+                // 🕒 INDICADOR DE TURNO EN TIEMPO REAL (SOLO PARA EMPLEADOS OPERATIVOS)
+                var enTurno = Boolean(emp.en_turno);
+                var enPausa = Boolean(emp.en_pausa);
+
+                var badgeTurnoHTML = '';
+                if (!esAdmin) {
+                    if (enPausa) {
+                        badgeTurnoHTML = '<span class="badge" style="background-color: #F39C12; color: #FFFFFF; font-size: 11px;">⏸️ En Pausa</span>';
+                    } else if (enTurno) {
+                        badgeTurnoHTML = '<span class="badge" style="background-color: #27AE60; color: #FFFFFF; font-size: 11px;">🟢 En Turno</span>';
+                    } else {
+                        badgeTurnoHTML = '<span class="badge" style="background-color: #991B1B; color: #FFFFFF; font-size: 11px;">⚪ Sin Turno</span>';
+                    }
+                }
+
+                var badgeCuentaHTML = '<span class="badge ' + (emp.activo ? 'bg-activo' : 'bg-inactivo') + '" style="font-size: 10px; opacity: 0.9;">' + (emp.activo ? 'Habilitado' : 'Deshabilitado') + '</span>';
+
+                var idFijo = empleados.indexOf(emp) + 1;
+                tr.innerHTML =
+                    '<td><strong>#' + idFijo + '</strong></td>' +
+                    '<td style="font-weight: 600; color: #1E293B;">' + emp.nombre + '</td>' +
+                    '<td><code>' + emp.user + '</code></td>' +
+                    '<td><div style="display: inline-flex; align-items: center; gap: 6px;"><code id="pass-texto-' + emp.id + '" data-real-pass="' + emp.pass + '">••••••••</code><button type="button" onclick="toggleOjoTabla(' + emp.id + ')" style="background: none; border: none; cursor: pointer; font-size: 13px; padding: 2px;"><span id="ojo-tabla-' + emp.id + '">👁️</span></button></div></td>' +
+                    '<td><span class="badge ' + claseColorRol + '">' + emp.rol + '</span></td>' +
+                    '<td><div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">' + badgeTurnoHTML + badgeCuentaHTML + '</div></td>' +
+                    '<td><div style="display: flex; gap: 5px; flex-wrap: nowrap; align-items: center;">' +
+                        '<button type="button" style="background-color: #D4AC0D; padding: 5px 8px; font-size: 11px; border-radius: 4px; border: none; color: white; font-weight: bold; cursor: pointer;" onclick="cargarEmpleadoEnFormulario(' + emp.id + ')">✏️ Editar</button>' +
+                        botonEstadoHTML +
+                        botonLoginHTML +
+                    '</div></td>';
+                tbody.appendChild(tr);
+            });
+        }
+        // ========================================================
+        // 💳 RENDERIZADOR DE CUENTAS FIADO
+        // ========================================================
+        function renderFiados() {
+            var selectEmp = document.getElementById('fiado-empleado-select');
+            if (selectEmp) {
+                var valorPrevio = selectEmp.value;
+                selectEmp.innerHTML = '<option value="">Seleccione personal...</option>';
+                empleados.filter(function(e) { return e.activo; }).forEach(function(emp) {
+                    var opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = emp.nombre + ' (' + emp.rol + ')';
+                    selectEmp.appendChild(opt);
+                });
+                if (valorPrevio) selectEmp.value = valorPrevio;
+            }
+
+            var totalDeuda = (cuentasFiado || []).reduce(function(acc, item) {
+                return acc + (Number(item.deuda) || 0);
+            }, 0);
+            var elTotal = document.getElementById('total-deuda-fiados');
+            if (elTotal) elTotal.innerText = '$' + totalDeuda.toLocaleString('es-CL');
+
+            var tbody = document.getElementById('lista-fiados');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!cuentasFiado || cuentasFiado.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748B; font-weight: 600;">✅ Todo al día: No hay cuentas fiado registradas.</td></tr>';
+                return;
+            }
+
+            cuentasFiado.forEach(function(item) {
+                var tr = document.createElement('tr');
+                var claseColorRol = (item.rol === 'Cocinero' || item.rol === 'Cocina') ? 'bg-cocina' : 'bg-cajero';
+                tr.innerHTML =
+                    '<td><strong>' + item.nombre + '</strong></td>' +
+                    '<td><span class="badge ' + claseColorRol + '">' + item.rol + '</span></td>' +
+                    '<td style="color: #475569;">' + item.ultimoConsumo + '</td>' +
+                    '<td style="color: #C0392B; font-weight: 800;">$' + Number(item.deuda).toLocaleString('es-CL') + '</td>' +
+                    '<td><span class="badge ' + (item.deuda > 0 ? 'bg-inactivo' : 'bg-activo') + '">' + (item.deuda > 0 ? 'Pendiente' : 'Al Día') + '</span></td>' +
+                    '<td><div style="display: flex; gap: 4px; flex-wrap: nowrap;">' +
+                        '<button type="button" title="Editar monto" style="background-color: #2980B9; padding: 5px 7px; font-size: 11px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer;" onclick="editarMontoFiado(' + item.id + ')">✏️</button>' +
+                        '<button type="button" title="Liquidar deuda" style="background-color: #27AE60; padding: 5px 7px; font-size: 11px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer;" onclick="consolidarCuentaFiado(' + item.id + ')">✅</button>' +
+                        '<button type="button" title="Eliminar registro" style="background-color: #C0392B; padding: 5px 7px; font-size: 11px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer;" onclick="eliminarCuentaFiado(' + item.id + ')">🗑️</button>' +
+                    '</div></td>';
+                tbody.appendChild(tr);
+            });
+        }
+        // ========================================================
+        // 🍔 RENDERIZADOR DE INVENTARIO Y PRODUCTOS
+        // ========================================================
+        function renderProductosAdmin() {
+            var etiquetasMap = {
+                'comidarapida': { texto: '🍔 Comida Rápida', color: '#27AE60' },
+                'bebestibles': { texto: '🥤 Bebestibles', color: '#00A8FF' },
+                'souvenirs': { texto: '🧸 Souvenirs', color: '#8E44AD' }
+            };
+            var ordenPrioridad = ['comidarapida', 'bebestibles', 'souvenirs'];
+            var catsDetectadas = Array.from(new Set(
+                catalogoMaestro.map(function(p) { return (p.categoria || 'comidarapida').toLowerCase().trim(); })
+            ));
+            if (catsDetectadas.length === 0) catsDetectadas = ordenPrioridad.slice();
+
+            var catsUnicas = catsDetectadas.sort(function(a, b) {
+                var idxA = ordenPrioridad.indexOf(a);
+                var idxB = ordenPrioridad.indexOf(b);
+                return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+            });
+
+            if (!catsUnicas.includes(categoriaActivaAdmin)) {
+                categoriaActivaAdmin = catsUnicas[0];
+            }
+
+            var barra = document.getElementById('barra-categorias-admin');
+            if (barra) {
+                barra.innerHTML = '';
+                catsUnicas.forEach(function(catId) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.innerText = etiquetasMap[catId] ? etiquetasMap[catId].texto : ('📦 ' + catId.toUpperCase());
+                    btn.style.cssText = 'padding: 7px 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap;';
+                    btn.style.backgroundColor = (catId === categoriaActivaAdmin) ? 'var(--primary-color)' : 'rgba(0,0,0,0.06)';
+                    btn.style.color = (catId === categoriaActivaAdmin) ? '#FFFFFF' : '#2C3E50';
+                    btn.onclick = function() {
+                        categoriaActivaAdmin = catId;
+                        renderProductosAdmin();
+                    };
+                    barra.appendChild(btn);
+                });
+            }
+
+            var selectCat = document.getElementById('prod-categoria');
+            if (selectCat && !idProductoEnEdicion) {
+                var valActual = selectCat.value;
+                selectCat.innerHTML = '';
+                catsUnicas.forEach(function(catId) {
+                    var opt = document.createElement('option');
+                    opt.value = catId;
+                    opt.textContent = etiquetasMap[catId] ? etiquetasMap[catId].texto : catId.toUpperCase();
+                    selectCat.appendChild(opt);
+                });
+                if (valActual && catsUnicas.includes(valActual)) selectCat.value = valActual;
+            }
+
+            var grid = document.getElementById('grid-productos-admin');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            var terminoBusqueda = normalizarTexto(document.getElementById('buscador-inventario-admin')?.value);
+            var filtrados = catalogoMaestro.filter(function(prod) {
+                var nombreProd = normalizarTexto(prod.nombre || prod.name);
+                return terminoBusqueda ? nombreProd.includes(terminoBusqueda) : ((prod.categoria || '').toLowerCase().trim() === categoriaActivaAdmin);
+            });
+
+            var contadorEl = document.getElementById('contador-productos-admin');
+            if (contadorEl) {
+                contadorEl.innerText = filtrados.length + (filtrados.length === 1 ? ' producto' : ' productos');
+            }
+
+            if (filtrados.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #64748B; font-weight: 600; background: #F8FAFC; border-radius: 10px;">No se encontraron productos con ese criterio.</div>';
+                return;
+            }
+
+            filtrados.forEach(function(prod, index) {
+                var catProd = (prod.categoria || '').toLowerCase().trim();
+                var infoCat = etiquetasMap[catProd] || { texto: catProd.toUpperCase(), color: '#34495E' };
+                var nombreItem = prod.nombre || prod.name || 'Sin Nombre';
+
+                var card = document.createElement('div');
+                card.style.cssText = 'background: #FFFFFF; border: 1px solid #E2E8F0; border-left: 5px solid ' + infoCat.color + '; border-radius: 10px; padding: 8px 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; gap: 4px;';
+                card.innerHTML =
+                    '<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">' +
+                        '<span style="font-size: 11px; font-weight: 800; color: #64748B; background: #F1F5F9; padding: 2px 7px; border-radius: 5px;">#' + (index + 1) + '</span>' +
+                        '<span style="font-size: 11px; font-weight: 700; color: ' + infoCat.color + ';">' + infoCat.texto + '</span>' +
+                    '</div>' +
+                    '<div style="font-weight: 800; font-size: 14px; color: #1E293B; line-height: 1.25;">' + nombreItem + '</div>' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 6px; margin-top: 2px;">' +
+                        '<span style="font-weight: 900; font-size: 16px; color: #198647;">$' + Number(prod.price).toLocaleString('es-CL') + '</span>' +
+                        '<div style="display: flex; gap: 6px;">' +
+                            '<button type="button" onclick="cargarProductoEnFormulario(' + prod.id + ')" style="background: #0db6d4; color: white; border: none; padding: 5px 9px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">✏️ Editar</button>' +
+                            '<button type="button" onclick="eliminarProductoLocal(' + prod.id + ')" style="background: #C0392B; color: white; border: none; padding: 5px 9px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">🗑️ Borrar</button>' +
+                        '</div>' +
+                    '</div>';
+                grid.appendChild(card);
+            });
+        }
+        // ========================================================
+        // 🍽️ RENDERIZADOR DE MESAS DEL PARQUE
+        // ========================================================
+        function renderMesasAdmin() {
+            var alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+
+            // Llenar selector de zona una sola vez fuera del bucle
+            var selZona = document.getElementById('mesa-zona-select');
+            if (selZona && !idMesaEnEdicion) {
+                var valPrevio = selZona.value;
+                selZona.innerHTML = '<option value="">Seleccione Zona...</option>';
+                alfabeto.forEach(function(l) {
+                    var opt = document.createElement('option');
+                    opt.value = l;
+                    opt.textContent = "Zona " + l;
+                    selZona.appendChild(opt);
+                });
+                selZona.value = valPrevio || letraZonaActivaAdmin || "";
+            }
+
+            var barra = document.getElementById('barra-letras-admin');
+            if (barra) {
+                barra.style.display = 'grid';
+                barra.style.gridTemplateColumns = 'repeat(13, 1fr)';
+                barra.style.gap = '6px';
+                barra.innerHTML = '';
+
+                alfabeto.forEach(function(letra) {
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.innerText = "Zona " + letra;
+                    btn.style.cssText = 'padding: 7px 4px; border: none; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; text-align: center; transition: all 0.2s;';
+                    btn.style.backgroundColor = (letra === letraZonaActivaAdmin) ? 'var(--primary-color)' : 'rgba(0,0,0,0.06)';
+                    btn.style.color = (letra === letraZonaActivaAdmin) ? '#FFFFFF' : '#2C3E50';
+                    btn.onclick = function() {
+                        letraZonaActivaAdmin = letra;
+                        renderMesasAdmin();
+                    };
+                    barra.appendChild(btn);
+                });
+            }
+
+            var contenedor = document.getElementById('grid-mesas-admin');
+            if (!contenedor) return;
+            contenedor.innerHTML = '';
+
+            listaMesasMaestra.forEach(function(mesa) {
+                var numLimpio = (mesa.numero || '').toString().trim().toUpperCase();
+                if (!numLimpio.startsWith(letraZonaActivaAdmin)) return;
+
+                var estaOcupada = (mesa.estado === 'OCUPADA') || mesasOcupadasAdmin.includes(numLimpio);
+                var divMesa = document.createElement('div');
+                divMesa.style.cssText = 'padding: 9px 8px; border-radius: 12px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; display: flex; flex-direction: column;';
+
+                if (estaOcupada) {
+                    divMesa.style.backgroundColor = '#E67E22';
+                    divMesa.style.color = '#FFFFFF';
+                    divMesa.innerHTML = '<h4 style="margin: 0; font-size: 15px; font-weight: 700;">Mesa ' + numLimpio + '</h4><p style="font-size: 10px; margin: 4px 0 0 0; font-weight: 700;">🔥 EN CONSUMO</p><button type="button" onclick="liberarMesaDesdeAdmin(\'' + numLimpio + '\')" style="margin-top: 8px; width: 100%; background: #FFFFFF; color: #C0392B; border: none; padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer;">🔓 Liberar Consumo</button>';
+                } else {
+                    divMesa.style.backgroundColor = '#FFFFFF';
+                    divMesa.style.color = 'var(--text-main)';
+                    divMesa.style.borderBottom = '5px solid #2ECC71';
+                    divMesa.innerHTML = '<h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #2C3E50;">Mesa ' + numLimpio + '</h4><p style="font-size: 10px; margin: 4px 0 6px 0; color: #27AE60; font-weight: bold;">🟢 DISPONIBLE</p><div style="display: flex; gap: 6px; margin-top: auto;"><button type="button" style="background-color: #0db6d4; padding: 6px 8px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; cursor: pointer; flex: 1;" onclick="cargarMesaEnFormulario(' + mesa.id + ')">✏️ Editar</button><button type="button" style="background-color: #C0392B; padding: 6px 8px; font-size: 11px; border-radius: 6px; border: none; color: white; font-weight: bold; cursor: pointer; flex: 1;" onclick="eliminarMesaLocal(' + mesa.id + ')">🗑️ Borrar</button></div>';
+                }
+                contenedor.appendChild(divMesa);
+            });
+        }
+        // ========================================================
+        // 👥 ACCIONES CRUD: PERSONAL OPERATIVO
+        // ========================================================
+        function cargarEmpleadoEnFormulario(id) {
+            var emp = empleados.find(function(e) { return e.id === id; });
+            if (!emp) return;
+            idEmpleadoEnEdicion = id;
+            document.getElementById('emp-nombre').value = emp.nombre;
+            document.getElementById('emp-user').value = emp.user;
+            document.getElementById('emp-pass').value = emp.pass;
+
+            var sel = document.getElementById('emp-rol');
+            var existeRol = Array.from(sel.options).some(function(o) { return o.value === emp.rol; });
+            sel.value = existeRol ? emp.rol : sel.options[0].value;
+
+            var cajaForm = document.getElementById('caja-form-empleado');
+            if (cajaForm) {
+                cajaForm.style.border = '2px solid #2980B9';
+                cajaForm.style.backgroundColor = '#EFF6FF';
+            }
+            var tituloForm = document.getElementById('titulo-form-empleado');
+            if (tituloForm) {
+                tituloForm.innerHTML = 'Modificar Personal ✏️ <button type="button" onclick="cancelarEdicionEmpleado()" style="float: right; background: #E2E8F0; color: #334155; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">✕ Cancelar</button>';
+            }
+            var btn = document.getElementById('btn-enviar-formulario');
+            btn.innerText = "Guardar Cambios 💾";
+            btn.style.backgroundColor = "#2980B9";
+            document.getElementById('emp-nombre').focus();
+        }
+
+        function cancelarEdicionEmpleado() {
+            idEmpleadoEnEdicion = null;
+            document.getElementById('form-empleado').reset();
+            var cajaForm = document.getElementById('caja-form-empleado');
+            if (cajaForm) {
+                cajaForm.style.border = '1px solid #CBD5E1';
+                cajaForm.style.backgroundColor = '#F8FAFC';
+            }
+            document.getElementById('titulo-form-empleado').innerText = "Contratar / Modificar Personal";
+            var btn = document.getElementById('btn-enviar-formulario');
+            btn.innerText = "Registrar Personal";
+            btn.style.backgroundColor = "#e67e22";
+        }
+
+        async function agregarEmpleadoLocal(e) {
+            if (e) e.preventDefault();
+            var nombre = document.getElementById('emp-nombre').value.trim();
+            var user = document.getElementById('emp-user').value.trim();
+            var pass = document.getElementById('emp-pass').value;
+            var rol = document.getElementById('emp-rol').value;
+            if (!nombre || !user || !pass) return;
+
+            var ok = await apiAdminPost('/api/empleados/', {
+                accion: idEmpleadoEnEdicion ? 'guardar' : 'crear',
+                id: idEmpleadoEnEdicion,
+                nombre: nombre,
+                user: user,
+                pass: pass,
+                rol: rol
+            });
+            if (ok) {
+                cancelarEdicionEmpleado();
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function toggleEstadoEmpleado(id) {
+            if (await apiAdminPost('/api/empleados/', { accion: 'toggle_estado', id: id })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function toggleMostrarEnLogin(id) {
+            if (await apiAdminPost('/api/empleados/', { accion: 'toggle_login', id: id })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function eliminarEmpleadoLocal(id) {
+            if (!confirm("¿Está seguro de eliminar a este trabajador de la base de datos física?")) return;
+            if (await apiAdminPost('/api/empleados/', { accion: 'eliminar', id: id })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+        // ========================================================
+        // 🍔 ACCIONES CRUD: PRODUCTOS Y MESAS
+        // ========================================================
+        function cargarProductoEnFormulario(id) {
+            var prod = catalogoMaestro.find(function(p) { return p.id === id; });
+            if (!prod) return;
+            idProductoEnEdicion = id;
+            document.getElementById('prod-nombre').value = prod.nombre || prod.name || '';
+            document.getElementById('prod-precio').value = prod.price;
+            document.getElementById('prod-categoria').value = (prod.categoria || '').toLowerCase().trim();
+            document.getElementById('form-producto-titulo').innerText = "Modificar Producto ✏️";
+
+            var btnSubmit = document.getElementById('btn-producto-submit');
+            btnSubmit.innerText = "Guardar Cambios 💾";
+            btnSubmit.style.backgroundColor = "#2980B9";
+
+            var btnCancelar = document.getElementById('btn-cancelar-edicion-prod');
+            if (btnCancelar) btnCancelar.style.display = 'inline-block';
+
+            var cajaForm = document.getElementById('caja-form-producto');
+            if (cajaForm) {
+                cajaForm.style.border = '2px solid #2980B9';
+                cajaForm.style.backgroundColor = '#EFF6FF';
+            }
+            document.getElementById('prod-nombre').focus();
+        }
+
+        function cancelarEdicionProducto() {
+            idProductoEnEdicion = null;
+            document.getElementById('form-producto').reset();
+            document.getElementById('form-producto-titulo').innerText = "✨ Añadir Nuevo Producto";
+
+            var btnSubmit = document.getElementById('btn-producto-submit');
+            btnSubmit.innerText = "Registrar Producto";
+            btnSubmit.style.backgroundColor = "#198647";
+
+            var btnCancelar = document.getElementById('btn-cancelar-edicion-prod');
+            if (btnCancelar) btnCancelar.style.display = 'none';
+
+            var cajaForm = document.getElementById('caja-form-producto');
+            if (cajaForm) {
+                cajaForm.style.border = '1px solid #CBD5E1';
+                cajaForm.style.backgroundColor = '#F8FAFC';
+            }
+        }
+
+        async function guardarProductoLocal(e) {
+            if (e) e.preventDefault();
+            var name = document.getElementById('prod-nombre').value.trim();
+            var price = parseInt(document.getElementById('prod-precio').value, 10);
+            var categoria = document.getElementById('prod-categoria').value;
+            if (!name || isNaN(price)) return;
+
+            var ok = await apiAdminPost('/api/productos/', {
+                accion: 'guardar',
+                id: idProductoEnEdicion,
+                name: name,
+                price: price,
+                categoria: categoria
+            });
+            if (ok) {
+                cancelarEdicionProducto();
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function eliminarProductoLocal(id) {
+            if (!confirm("¿Desea eliminar este producto de la base de datos física?")) return;
+            if (await apiAdminPost('/api/productos/', { accion: 'eliminar', id: id })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        function cargarMesaEnFormulario(id) {
+            var mesa = listaMesasMaestra.find(function(m) { return m.id === id; });
+            if (!mesa) return;
+
+            var code = (mesa.numero || '').toString().trim().toUpperCase();
+            var letra = code.charAt(0);
+            var numSolo = code.slice(1).replace(/\D/g, '');
+
+            var selZona = document.getElementById('mesa-zona-select');
+            if (selZona && /^[A-Z]$/.test(letra)) selZona.value = letra;
+            document.getElementById('mesa-numero-input').value = numSolo || '';
+
+            idMesaEnEdicion = id;
+            document.getElementById('form-mesa-titulo').innerText = "Modificar Mesa ✏️";
+            var btnSubmit = document.getElementById('btn-mesa-submit');
+            btnSubmit.innerText = "Guardar Cambios 💾";
+            btnSubmit.style.backgroundColor = "#2980B9";
+
+            var btnCancelar = document.getElementById('btn-cancelar-edicion-mesa');
+            if (btnCancelar) btnCancelar.style.display = 'inline-block';
+
+            var cajaForm = document.getElementById('caja-form-mesa');
+            if (cajaForm) {
+                cajaForm.style.border = '2px solid #2980B9';
+                cajaForm.style.backgroundColor = '#EFF6FF';
+            }
+        }
+
+        function cancelarEdicionMesa() {
+            idMesaEnEdicion = null;
+            document.getElementById('form-mesa').reset();
+            document.getElementById('form-mesa-titulo').innerText = "Añadir Nueva Mesa";
+
+            var btnSubmit = document.getElementById('btn-mesa-submit');
+            btnSubmit.innerText = "Registrar Mesa";
+            btnSubmit.style.backgroundColor = "#198647";
+
+            var btnCancelar = document.getElementById('btn-cancelar-edicion-mesa');
+            if (btnCancelar) btnCancelar.style.display = 'none';
+
+            var cajaForm = document.getElementById('caja-form-mesa');
+            if (cajaForm) {
+                cajaForm.style.border = '1px solid #CBD5E1';
+                cajaForm.style.backgroundColor = '#F8FAFC';
+            }
+        }
+
+        async function guardarMesaLocal(e) {
+            if (e) e.preventDefault();
+            var zonaLetra = document.getElementById('mesa-zona-select').value.trim().toUpperCase();
+            var numMesa = document.getElementById('mesa-numero-input').value.trim();
+
+            if (!zonaLetra || !/^[A-Z]$/.test(zonaLetra)) {
+                alert("⚠️ Debes seleccionar una Zona (Letra A - Z) antes de guardar.");
+                return;
+            }
+            if (numMesa === "" || isNaN(parseInt(numMesa, 10)) || parseInt(numMesa, 10) <= 0) {
+                alert("⚠️ Ingresa un número de mesa válido mayor a 0.");
+                return;
+            }
+
+            var ok = await apiAdminPost('/api/mesas/', {
+                accion: idMesaEnEdicion !== null ? 'guardar' : 'crear',
+                id: idMesaEnEdicion,
+                numero: zonaLetra + parseInt(numMesa, 10)
+            });
+            if (ok) {
+                cancelarEdicionMesa();
+                letraZonaActivaAdmin = zonaLetra;
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function eliminarMesaLocal(id) {
+            if (!confirm("¿Eliminar la mesa seleccionada permanentemente de MySQL?")) return;
+            if (await apiAdminPost('/api/mesas/', { accion: 'eliminar', id: id })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function liberarMesaDesdeAdmin(numeroMesa) {
+            if (!confirm("¿Liberar de forma forzada el consumo de la Mesa " + numeroMesa + " en la base de datos?")) return;
+            if (await apiAdminPost('/api/mesa/toggle/', { mesa_numero: numeroMesa, accion: 'liberar' })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+        // ========================================================
+        // 💳 ACCIONES CRUD: CUENTAS FIADO
+        // ========================================================
+        async function registrarConsumoFiado(e) {
+            if (e) e.preventDefault();
+            var empId = document.getElementById('fiado-empleado-select').value;
+            var detalle = document.getElementById('fiado-detalle-input').value.trim();
+            var monto = parseInt(document.getElementById('fiado-monto-input').value, 10);
+            if (!empId || !detalle || isNaN(monto) || monto <= 0) return;
+
+            var empObj = empleados.find(function(x) { return String(x.id) === String(empId); });
+            var ok = await apiAdminPost('/api/fiados/', {
+                accion: 'crear',
+                empleado_id: empId,
+                nombre: empObj ? empObj.nombre : '',
+                rol: empObj ? empObj.rol : 'Personal',
+                ultimoConsumo: detalle,
+                monto: monto
+            });
+            if (ok) {
+                document.getElementById('form-nuevo-fiado').reset();
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function editarMontoFiado(id) {
+            var fObj = cuentasFiado.find(function(f) { return f.id === id; });
+            if (!fObj) return;
+            var nuevoMontoRaw = prompt("Modificar deuda de " + fObj.nombre + ".\nMonto actual: $" + fObj.deuda.toLocaleString('es-CL') + "\n\nIngrese el nuevo monto:", fObj.deuda);
+            if (nuevoMontoRaw === null) return;
+
+            var nuevoMonto = parseInt(nuevoMontoRaw.trim(), 10);
+            if (isNaN(nuevoMonto) || nuevoMonto < 0) {
+                alert("⚠️ Error: Ingrese un número válido.");
+                return;
+            }
+            if (await apiAdminPost('/api/fiados/', { id: id, accion: 'editar', deuda: nuevoMonto })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function consolidarCuentaFiado(id) {
+            var fObj = cuentasFiado.find(function(f) { return f.id === id; });
+            if (!fObj) return;
+            if (fObj.deuda === 0) { alert("La cuenta ya está al día."); return; }
+            if (!confirm("¿Desea marcar como pagada la deuda de $" + fObj.deuda.toLocaleString('es-CL') + " de " + fObj.nombre + "?")) return;
+
+            if (await apiAdminPost('/api/fiados/', { id: id, accion: 'liquidar' })) {
+                alert("✅ Cuenta consolidada exitosamente.");
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        async function eliminarCuentaFiado(id) {
+            var fObj = cuentasFiado.find(function(f) { return f.id === id; });
+            if (!fObj) return;
+            if (!confirm("¿Desea eliminar permanentemente el registro de fiado de " + fObj.nombre + "?")) return;
+
+            if (await apiAdminPost('/api/fiados/', { id: id, accion: 'eliminar' })) {
+                await actualizarPanelAdminDesdeBackend();
+            }
+        }
+
+        // ========================================================
+        // 👁️ CONTROLES VISUALES, SEGMENTACIÓN Y PESTAÑAS
+        // ========================================================
+        function toggleMostrarContrasena() {
+            var input = document.getElementById('emp-pass');
+            var ico = document.getElementById('ojo-icono');
+            if (input.type === 'password') { input.type = 'text'; ico.innerText = '🙈'; }
+            else { input.type = 'password'; ico.innerText = '👁️'; }
+        }
+
+        function toggleOjoTabla(id) {
+            var txt = document.getElementById('pass-texto-' + id);
+            var ico = document.getElementById('ojo-tabla-' + id);
+            var real = txt.getAttribute('data-real-pass');
+            if (txt.innerText === '••••••••') { txt.innerText = real; ico.innerText = '🙈'; }
+            else { txt.innerText = '••••••••'; ico.innerText = '👁️'; }
+        }
+
+        function renderSegmentacionDinamica() {
+            var contCaja = document.getElementById('seg-terminal-caja');
+            var contBarra = document.getElementById('seg-terminal-barra');
+            if (!contCaja || !contBarra) return;
+
+            var etiquetasMap = {
+                'comidarapida': '🍔 Comida Rápida',
+                'bebestibles': '🥤 Bebestibles',
+                'souvenirs': '🧸 Souvenirs'
+            };
+            var ordenPrioridad = ['comidarapida', 'bebestibles', 'souvenirs'];
+            var catsDetectadas = Array.from(new Set(
+                catalogoMaestro.map(function(p) { return (p.categoria || 'comidarapida').toLowerCase().trim(); })
+            ));
+            if (catsDetectadas.length === 0) catsDetectadas = ordenPrioridad.slice();
+
+            var catsUnicas = catsDetectadas.sort(function(a, b) {
+                var idxA = ordenPrioridad.indexOf(a);
+                var idxB = ordenPrioridad.indexOf(b);
+                return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+            });
+
+            var configActual = window.segmentacionTerminales || {
+                caja: ['comidarapida', 'bebestibles', 'souvenirs'],
+                barra: ['souvenirs']
+            };
+
+            contCaja.innerHTML = '';
+            contBarra.innerHTML = '';
+
+            catsUnicas.forEach(function(catId) {
+                var labelTexto = etiquetasMap[catId] || ('📦 ' + catId.toUpperCase());
+
+                [
+                    { contenedor: contCaja, lista: configActual.caja || [] },
+                    { contenedor: contBarra, lista: configActual.barra || [] }
+                ].forEach(function(dest) {
+                    var lbl = document.createElement('label');
+                    var chk = document.createElement('input');
+                    chk.type = 'checkbox';
+                    chk.value = catId;
+                    chk.checked = dest.lista.includes(catId);
+                    chk.onchange = guardarSegmentacion;
+                    lbl.appendChild(chk);
+                    lbl.appendChild(document.createTextNode(labelTexto));
+                    dest.contenedor.appendChild(lbl);
+                });
+            });
+        }
+
+        async function guardarSegmentacion() {
+            var checksCaja = Array.from(document.querySelectorAll('#seg-terminal-caja input[type="checkbox"]:checked')).map(function(c) { return c.value; });
+            var checksBarra = Array.from(document.querySelectorAll('#seg-terminal-barra input[type="checkbox"]:checked')).map(function(c) { return c.value; });
+            var badge = document.getElementById('badge-segmentacion-estado');
+
+            if (badge) {
+                badge.innerText = '⏳ Guardando...';
+                badge.style.background = '#FEF5E7';
+                badge.style.color = '#D35400';
+            }
+
+            var data = await apiAdminPost('/api/segmentacion/', { caja: checksCaja, barra: checksBarra }, "❌ Error al guardar segmentación en MySQL.");
+            if (data) {
+                window.segmentacionTerminales = { caja: data.caja, barra: data.barra };
+                if (badge) {
+                    badge.innerText = '💾 Guardado en MySQL';
+                    badge.style.background = '#E8F8F5';
+                    badge.style.color = '#198647';
+                    setTimeout(function() { badge.innerText = '✅ Activo'; }, 1800);
+                }
+            }
+        }
+
+        function cambiarSeccionAdmin(idSeccion, botonPulsado) {
+            document.querySelectorAll('.admin-section-panel').forEach(function(sec) {
+                sec.style.display = 'none';
+            });
+
+            var objetivo = document.getElementById(idSeccion);
+            if (objetivo) {
+                objetivo.style.display = objetivo.classList.contains('grid-2-cols') ? 'grid' : 'block';
+            }
+
+            document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
+                btn.style.background = 'rgba(255,255,255,0.1)';
+                btn.style.color = '#F7CEA5';
+                btn.style.border = '1px solid rgba(247,206,165,0.4)';
+                btn.classList.remove('active');
+            });
+
+            if (botonPulsado) {
+                botonPulsado.style.background = '#27AE60';
+                botonPulsado.style.color = '#FFFFFF';
+                botonPulsado.style.border = '2px solid #F7CEA5';
+                botonPulsado.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

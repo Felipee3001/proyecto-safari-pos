@@ -1,0 +1,2294 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Parque Safari</title>
+    <link href="{% static 'css/prototipo.css' %}?v=4.0" rel="stylesheet">
+
+</head>
+<body style="height: 100vh; max-height: 100vh; overflow: hidden; margin: 0;">
+    {% csrf_token %}
+    <!-- CANVAS PRINCIPAL DEL SISTEMA -->
+    <div class="navbar-simulador">
+
+        <!-- BOTÓN DE REFRESCO EN EL LOGO -->
+        <a onclick="window.location.reload();" class="brand-link" style="text-decoration: none; display: inline-flex; align-items: center; margin-right: 5px;">
+            <img src="{% static 'img/logo_safari.png' %}" class="navbar-logo-safari" alt="Logo Parque Safari" style="cursor: pointer;">
+        </a>
+
+        <!-- TÍTULO FIJO -->
+        <div class="brand" style="display: inline-block; vertical-align: middle;">
+            PARQUE <span> SAFARI</span>
+        </div>
+
+        <!-- BOTONES DE NAVEGACIÓN SUPERIOR (VINCULADOS A SWITCHVIEW) -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" id="btn-ventas" onclick="
+                document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('ventas').style.display = 'block';
+                this.classList.add('active');
+            ">💸 Registro de Ventas</button>
+
+            <button class="tab-btn" id="btn-mesas" onclick="
+                document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('mesas').style.display = 'block';
+                this.classList.add('active');
+            ">🍽️ Estado de las Mesas</button>
+
+            <!-- 🍔 AQUÍ QUEDA EL BOTÓN REFORMADO CON LA FUNCIÓN EXTERNA -->
+            <button class="tab-btn" id="btn-kds" onclick="cambiarAPantallaKDS()">🍔 Pantallas de Preparación</button>
+
+            <button class="tab-btn" id="btn-mesero" style="display:none;" onclick="
+                document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('monitor-mesero-movil').style.display = 'block';
+                this.classList.add('active');
+            ">🏃‍♂️ Pedidos Listos</button>
+        </div> 
+        
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- BOTÓN 1: Iniciar / Cerrar Jornada -->
+            <button id="btn-jornada-toggle" class="btn-nav" onclick="gestionarJornadaCaja()" style="background-color: #27AE60; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                🟢 Iniciar Turno
+            </button>
+        
+            <!-- NUEVO BOTÓN 2: Pausar / Reanudar Jornada -->
+            <button id="btn-pausar-jornada" class="btn-nav" onclick="pausarReanudarJornada()" style="display: none; background-color: #F39C12; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                ⏸️ Pausar Jornada
+            </button>
+        
+            <!-- BOTÓN 3: Cerrar Sesión -->
+            <button class="btn-logout-top" onclick="abrirModalLogout(event)" style="background-color: #C0392B; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                CERRAR SESIÓN 🔓
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL PERSONALIZADO DE CONFIRMACIÓN DE CIERRE DE SESIÓN -->
+    <div id="modal-confirmar-logout" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #FFFFFF; border-radius: 18px; width: 100%; max-width: 400px; padding: 28px 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.35); border-top: 6px solid #C0392B; animation: aparecerModalSafari 0.2s ease-out;">
+            <div style="width: 60px; height: 60px; background: #FEF2F2; color: #C0392B; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 14px auto; border: 2px solid #FECACA;">
+                🔓
+            </div>
+            <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 800; color: #1E293B;">
+                ¿Cerrar Sesión?
+            </h3>
+            <p style="margin: 0 0 22px 0; font-size: 14px; color: #64748B; line-height: 1.45;">
+                Estás a punto de salir de <strong>Terminal Parque Safari</strong>. Tendrás que ingresar tus credenciales nuevamente para volver a operar.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" onclick="cerrarModalLogout()" style="flex: 1; background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="button" onclick="ejecutarLogoutConfirmado()" style="flex: 1; background: #C0392B; color: #FFFFFF; border: none; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);">
+                    Sí, Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE JORNADA PAUSADA -->
+    <div id="modal-pausa-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(6px); z-index: 99997; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; padding: 30px; border-radius: 16px; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); color: #1e293b;">
+            <div style="font-size: 45px; margin-bottom: 10px;">⏸️</div>
+            <h3 style="margin: 0; color: #D68910; font-size: 22px; font-weight: 800;">Jornada en Pausa</h3>
+            <p id="texto-modal-pausa" style="margin: 10px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600;">
+                La estación está temporalmente pausada. Presiona el botón para reanudar la atención.
+            </p>
+            <button onclick="pausarReanudarJornada()" style="width: 100%; background: #27AE60; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                ▶️ Reanudar Jornada
+            </button>
+        </div>
+    </div>
+    <!-- ========================================================
+         CONTENIDO DINÁMICO DE PANTALLAS
+       ======================================================== -->
+       
+    <!-- PANTALLA 1: REGISTRO DE VENTAS -->
+    <div id="ventas" class="view-content active" style="height: calc(100vh - 80px); max-height: calc(100vh - 80px); overflow: hidden; padding: 12px 20px; box-sizing: border-box;">
+        <div class="ventas-container" style="display: grid; grid-template-columns: 0.72fr 1fr; gap: 30px; width: 100%; height: 100%; max-height: 100%; overflow: hidden; align-items: stretch; box-sizing: border-box;">
+            <div class="catalog-section" style="width: 100% !important; max-width: none !important; flex: none !important; display: flex; flex-direction: column; gap: 14px; height: 100%; max-height: 100%; overflow-y: auto; padding-right: 6px; box-sizing: border-box;">
+                <!-- BARRA DE PESTAÑAS PARA CAMBIAR DE CATEGORÍA CUANDO QUIERAS -->
+                <div class="categories-bar" style="flex-shrink: 0; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="category-pill" onclick="filtrarProductosPorCategoria('comidarapida', this)">🍔 Comida Rápida</button>
+                    <button class="category-pill" onclick="filtrarProductosPorCategoria('bebestibles', this)">🥤 Bebestibles</button>
+                    <button class="category-pill" onclick="filtrarProductosPorCategoria('souvenirs', this)">🧸 Souvenirs</button>
+                </div>
+
+                <!-- BUSCADOR RÁPIDO DE PRODUCTOS EN TIEMPO REAL -->
+                <div style="flex-shrink: 0; position: relative; display: flex; align-items: center;">
+                    <span style="position: absolute; left: 12px; font-size: 14px; pointer-events: none;">🔍</span>
+                    <input 
+                        type="text" 
+                        id="buscador-productos-ventas" 
+                        oninput="buscarProductosEnTiempoReal(this.value)" 
+                        placeholder="Buscar producto por nombre (ej: Hamburguesa, Jugo, León)..." 
+                        style="width: 100%; padding: 9px 36px 9px 34px; border-radius: 10px; border: 2px solid #CBD5E1; background: rgba(255, 255, 255, 0.96); font-size: 13px; font-weight: 600; color: #1E293B; outline: none; box-shadow: 0 3px 8px rgba(0,0,0,0.18); box-sizing: border-box;"
+                    >
+                    <button 
+                        type="button" 
+                        id="btn-limpiar-buscador" 
+                        onclick="limpiarBuscadorProductos()" 
+                        title="Limpiar búsqueda"
+                        style="display: none; position: absolute; right: 8px; background: #E2E8F0; color: #475569; border: none; width: 22px; height: 22px; border-radius: 50%; font-weight: 800; font-size: 12px; cursor: pointer; align-items: center; justify-content: center;">
+                        ✕
+                    </button>
+                </div>
+            
+                <!-- 🍔 CUADRÍCULA 1: COMIDA RÁPIDA -->
+                <div id="seccion-comidarapida" style="background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px); padding: 14px; border-radius: 14px; border-left: 5px solid #27AE60;">
+                    <h4 style="color: #F7CEA5; margin: 0 0 10px 0; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">
+                        🍔 COMIDA RÁPIDA
+                    </h4>
+                    <div class="grid-products" id="grid-cat-comidarapida" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 8px;"></div>
+                </div>
+            
+                <!-- 🥤 CUADRÍCULA 2: BEBESTIBLES -->
+                <div id="seccion-bebestibles" style="background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px); padding: 14px; border-radius: 14px; border-left: 5px solid #2980B9;">
+                    <h4 style="color: #F7CEA5; margin: 0 0 10px 0; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">
+                        🥤 BEBESTIBLES
+                    </h4>
+                    <div class="grid-products" id="grid-cat-bebestibles" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px;"></div>
+                </div>
+            
+                <!-- 🧸 CUADRÍCULA 3: SOUVENIRS -->
+                <div id="seccion-souvenirs" style="background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px); padding: 14px; border-radius: 14px; border-left: 5px solid #8E44AD;">
+                    <h4 style="color: #F7CEA5; margin: 0 0 10px 0; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">
+                        🧸 SOUVENIRS
+                    </h4>
+                    <div class="grid-products" id="grid-cat-souvenirs" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px;"></div>
+                </div>
+            </div>
+            
+            <!-- SECCIÓN LATERAL: DETALLE DEL PEDIDO (OPTIMIZADA PARA VER BIEN LOS PRODUCTOS) -->
+            <div class="cart-section" style="width: 100% !important; max-width: none !important; flex: none !important; display: flex; flex-direction: column; height: 100%; max-height: 100%; overflow: hidden; box-sizing: border-box; padding: 14px 18px;">
+                
+                <!-- ZONA SUPERIOR COMPACTA: MODALIDAD + ZONA + MESA + NOTAS -->
+                <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="cart-title" style="margin: 0; font-size: 18px;">Detalle del Pedido</h3>
+                        <span id="badge-mesa-elegida" style="padding: 3px 10px; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 800; font-size: 12px; color: #475569;">
+                            Sin mesa
+                        </span>
+                    </div>
+                
+                    <!-- SELECTOR DE MODALIDAD DE ENTREGA -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-weight: bold; font-size: 11px; color: var(--primary-color); white-space: nowrap;">📍 MODALIDAD:</label>
+                        <select id="cart-modalidad-select" class="form-control" style="padding: 4px 8px; font-weight: bold; cursor: pointer; border: 2px solid var(--primary-color); font-size: 12px; flex: 1;" onchange="conmutarObligatoriedadMesa()">
+                            <option value="MESA">🍽️ Entrega en Mesa del Parque</option>
+                            <option value="MESON">🍦 Entrega en Barra (Mesón)</option>
+                        </select>
+                    </div>
+
+                    <!-- SELECTOR VISUAL DE ZONAS Y MESAS COMPACTO -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label id="label-mesa-obligatoria" style="font-weight: bold; font-size: 11px; color: #C0392B; margin: 0;">
+                            * Seleccionar Mesa Obligatoria *
+                        </label>
+                    
+                        <input type="hidden" id="cart-seccion-select" value="">
+                        <input type="hidden" id="cart-mesa-select" value="">
+                    
+                        <!-- Matriz compacta de letras (13 columnas x 2 filas) -->
+                        <div id="grid-botones-zonas-venta" style="display: grid; grid-template-columns: repeat(13, 1fr); gap: 2px; background: #F8FAFC; padding: 4px; border-radius: 6px; border: 1px solid #E2E8F0;"></div>
+                    
+                        <!-- Matriz compacta de mesas (8 columnas x 3 filas) -->
+                        <div id="grid-botones-mesas-venta" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px;">
+                            <div style="grid-column: 1 / -1; text-align: center; font-size: 11px; color: #64748B; padding: 4px; background: #F8FAFC; border-radius: 6px;">
+                                Toque una letra de Zona arriba para ver sus mesas
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- NOTAS / OBSERVACIONES EN UNA LÍNEA -->
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                        <label for="cart-observaciones" style="font-size: 11px; font-weight: bold; color: var(--primary-color); white-space: nowrap; margin: 0;">📝 NOTA:</label>
+                        <input type="text" 
+                            id="cart-observaciones" 
+                            maxlength="150" 
+                            class="form-control" 
+                            style="flex: 1; padding: 4px 8px; border-radius: 6px; font-size: 12px;" 
+                            placeholder="Solo letras, números, punto (.) y coma (,)"
+                            pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\s,.]+"
+                            title="Solo se permiten letras, números, espacios, punto (.) y coma (,)."
+                            oninput="this.value = this.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s,.]/g, ''); this.setCustomValidity('')">
+                    </div>
+                </div>
+
+                <!-- ZONA CENTRAL AMPLIA: LISTA DE PRODUCTOS CON SCROLL PROPIO -->
+                <div class="cart-items" id="cart-items-container" style="flex: 1; overflow-y: auto; margin-top: 8px; padding: 6px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;">
+                    <div id="cart-dynamic-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    <p id="cart-empty-msg" style="color: #64748B; text-align: center; margin-top: 25px; font-size: 13px; font-weight: 600;">Seleccione productos del catálogo</p>
+                </div>
+            
+                <!-- ZONA INFERIOR FIJA: TOTAL Y BOTONES -->
+                <div class="cart-totals" style="flex-shrink: 0; border-top: 2px solid #E2E8F0; padding-top: 8px; margin-top: 8px; background: #ffffff;">
+                    <div class="total-row" style="display: flex; justify-content: space-between; font-size: 19px; font-weight: bold; margin-bottom: 8px; color: #2C3E50;">
+                        <span>Total:</span>
+                        <span id="cart-total-value">$0</span>
+                    </div>
+                
+                    <div class="checkout-actions">
+                        <button class="btn-action btn-alert" onclick="clearCart()" style="background-color: #E74C3C; color: white;">Vaciar 🚯</button>
+                        <button class="btn-action btn-submit" onclick="procesarVentaWebSocket(event)" style="background-color: #27AE60; color: white;">Comprobante 📋</button>
+                    </div>
+                </div>
+            </div> 
+        </div> 
+    </div>
+    <!-- PANTALLA 2: MONITOR DE ESTADO DE MESAS -->
+        <div id="mesas" class="view-content" style="height: calc(100vh - 85px); max-height: calc(100vh - 85px); overflow: hidden; padding: 12px 20px; box-sizing: border-box;">
+            <div style="display: flex; flex-direction: column; gap: 10px; height: 100%; max-width: 1400px; margin: 0 auto; overflow: hidden;">
+            
+                <!-- BARRA SUPERIOR: LEYENDA + MESAS OCUPADAS + ZONA ACTUAL -->
+                <div class="legend-bar" style="flex-shrink: 0; margin: 0; padding: 10px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; gap: 18px; align-items: center;">
+                        <div class="legend-item" style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1E293B; font-size: 14px;">
+                            <span style="display: inline-block; width: 18px; height: 18px; background-color: #27AE60; border: 2px solid #1E8449; border-radius: 4px; flex-shrink: 0;"></span>
+                            <span>Disponible</span>
+                        </div>
+                        <div class="legend-item" style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1E293B; font-size: 14px;">
+                            <span style="display: inline-block; width: 18px; height: 18px; background-color: #e67e22; border: 2px solid #d35400; border-radius: 4px; flex-shrink: 0;"></span>
+                            <span>Ocupada (En Consumo)</span>
+                        </div>
+                    </div>
+                    <!-- RESUMEN DE MESAS OCUPADAS EN TIEMPO REAL -->
+                    <div id="resumen-mesas-ocupadas-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #F8FAFC; padding: 5px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                        <span style="font-weight: 800; color: #C0392B; font-size: 13px; white-space: nowrap;">🔥 Mesas Ocupadas Ahora:</span>
+                        <div id="lista-chips-ocupadas" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                            <span style="color: #27AE60; font-weight: 700; font-size: 13px;">✅ Todas las mesas están disponibles</span>
+                        </div>
+                    </div>
+                
+                    <div id="titulo-zona-actual" style="font-weight: 800; color: #C0392B; font-size: 15px; background: #FEF2F2; padding: 5px 12px; border-radius: 8px; border: 1px solid #FECACA;">
+                        📍 VIENDO: ZONA A
+                    </div>
+                </div>
+            
+                <!-- BARRA DE ZONAS EN 2 FILAS SIMÉTRICAS DE 13 LETRAS (A-M / N-Z) -->
+                <div id="barra-letras-zonas" style="flex-shrink: 0; background: rgba(255, 255, 255, 0.94); padding: 8px 12px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.12); display: grid; grid-template-columns: repeat(13, 1fr); gap: 6px;"></div>
+            
+                <!-- CUADRÍCULA SIMÉTRICA DE 6 COLUMNAS X 4 FILAS (24 MESAS EXACTAS) -->
+                <div id="grid-mesas-dinamico" style="flex: 1; overflow-y: auto; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(6px); padding: 14px; border-radius: 14px; display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 1fr; gap: 12px;"></div>
+            
+            </div>
+        </div>
+
+        <!-- PANTALLA 3: PANTALLAS DE PREPARACIÓN (KDS) -->
+        <div id="kds" class="view-content" style="height: calc(100vh - 85px); max-height: calc(100vh - 85px); overflow: hidden; padding: 14px 18px; box-sizing: border-box;">
+            <div class="kds-container" style="display: flex; gap: 14px; width: 100%; height: 100%; align-items: stretch;"> 
+
+                <!-- =========================================================
+                     BLOQUE COCINA (4 COLUMNAS - SOLO VISIBLE PARA COCINERO)
+                     ========================================================= -->
+
+                <!-- COLUMNA COCINA 1: EN PREPARACIÓN -->
+                <div class="kds-column kds-cocina-col" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div class="kds-column-title bg-cocina" style="flex-shrink: 0; background-color: #2980B9; color: white; padding: 12px; border-radius: 10px; font-weight: 800; text-align: center; margin-bottom: 12px; font-size: 14px;">
+                        🔥 EN PREPARACIÓN (COCINA)
+                    </div>
+                    <div id="container-cocina" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; align-content: start !important;">
+                        <p id="no-cocina-msg" style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">No hay comandas pendientes en Cocina.</p>
+                    </div>
+                </div>
+
+                <!-- COLUMNA COCINA 2: ENTREGADO A MESERO -->
+                <div class="kds-column kds-cocina-col" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div class="kds-column-title" style="flex-shrink: 0; background-color: #E67E22; color: white; padding: 12px; border-radius: 10px; font-weight: 800; text-align: center; margin-bottom: 12px; font-size: 14px;">
+                        🏃‍♂️ ENTREGADO A MESERO
+                    </div>
+                    <div id="container-cocina-mesero" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; align-content: start;">
+                        <p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Sin pedidos en manos del mesero.</p>
+                    </div>
+                </div>
+
+                <!-- COLUMNA COCINA 3: SERVIDO EN MESA -->
+                <div class="kds-column kds-cocina-col" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div class="kds-column-title" style="flex-shrink: 0; background-color: #27AE60; color: white; padding: 12px; border-radius: 10px; font-weight: 800; text-align: center; margin-bottom: 12px; font-size: 14px;">
+                        ✅ SERVIDO EN MESA
+                    </div>
+                    <div id="container-cocina-servidos" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; align-content: start;">
+                        <p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Sin pedidos servidos en consumo.</p>
+                    </div>
+                </div>
+
+                <!-- COLUMNA COCINA 4: PRODUCTOS FINALIZADOS -->
+                <div class="kds-column kds-cocina-col" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div class="kds-column-title" style="flex-shrink: 0; background-color: #34495E; color: white; padding: 12px; border-radius: 10px; font-weight: 800; text-align: center; margin-bottom: 12px; font-size: 14px;">
+                        🏁 PRODUCTOS FINALIZADOS
+                    </div>
+                    <div id="container-cocina-finalizados" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; align-content: start;">
+                        <p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Aún no hay pedidos finalizados.</p>
+                    </div>
+                </div>
+                <!-- =========================================================
+                     BLOQUE BARRA / MESÓN (2 COLUMNAS - VISIBLE PARA CAJERO/ADMIN)
+                     ========================================================= -->
+                <!-- COLUMNA BARRA 1: PENDIENTES -->
+                <div class="kds-column kds-barra-col" id="columna-barra-kds" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div class="kds-column-title bg-barra" style="flex-shrink: 0; font-size: 14px;">🥤 MONITOR DE BARRA / MESÓN</div>
+                    <div id="container-barra" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; align-content: start;">
+                        <p id="no-barra-msg" style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">No hay pedidos pendientes en Barra.</p>
+                    </div>
+                </div>
+
+                <!-- COLUMNA BARRA 2: FINALIZADOS -->
+                <div class="kds-column kds-barra-col" id="columna-barra-finalizados" style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div class="kds-column-title" style="flex-shrink: 0; background-color: #34495E; color: white; padding: 12px; border-radius: 10px; font-weight: 800; text-align: center; margin-bottom: 12px; font-size: 14px;">
+                        🏁 PRODUCTOS FINALIZADOS (BARRA)
+                    </div>
+                    <div id="container-barra-finalizados" style="flex: 1; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; align-content: start;">
+                        <p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Aún no hay productos finalizados en Barra.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- =======================================================================
+             🏃‍♂️ PANTALLA: MONITOR EXCLUSIVO DEL MESERO (CENTRADITO Y SIMÉTRICO)
+             ====================================================================== -->
+        <div id="monitor-mesero-movil" class="view-content" style="display: none; width: 100%; min-height: 80vh; padding: 20px; box-sizing: border-box;">
+        
+            <!-- CONTENEDOR ELÁSTICO CENTRALIZADOR -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; margin: 0 auto; gap: 25px;">
+            
+                <!-- Encabezado de la Pantalla del Mesero -->
+                <div style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 25px 35px; border-radius: 20px; border-bottom: 6px solid #2ECC71; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); width: 95%; max-width: 1100px; box-sizing: border-box; margin-top: 10px;">
+                    <h3 style="color: #F7CEA5; font-size: 25px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">🏃‍♂️ Terminal de Despacho y Alertas para Meseros</h3>
+                    <p style="color: #2ECC71; font-size: 13px; font-weight: bold; margin-top: 6px; text-transform: uppercase; letter-spacing: 1.5px;">📡 Sincronización de Comandas en Tiempo Real</p>
+                </div>
+            
+                <!-- 📊 🟢 RECONEXIÓN CRÍTICA: Restauramos la grilla que el JavaScript busca para inyectar los platos -->
+                <div id="lista-alertas-mesero" style="width: 100%; max-width: 900px;">
+                    
+                    <!-- REEMPLAZO DEL MENSAJE DE ESTADO VACÍO ORIGINAL -->
+                    <div id="no-alertas-msg" class="mesero-alerta-vacia">
+                        <span class="badge-status">📡 Sistema Sincronizado</span>
+                        <div>🎉 Todo al día: No tienes comandas listas para retirar en el mostrador del Parque Safari.</div>
+                    </div>
+                
+                </div> <!-- Cierra #lista-alertas-mesero -->
+            
+            </div>
+        </div>
+
+
+        <!-- MODAL DE ALERTA CENTRADO -->
+        <div id="custom-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.55); z-index: 99999; align-items: center; justify-content: center;">
+            <div style="background: #ffffff; padding: 25px 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); font-family: sans-serif;">
+
+                <div id="modal-icono" style="font-size: 36px; margin-bottom: 8px;">✅</div>
+                <h3 id="modal-titulo" style="margin: 0 0 10px 0; color: #2C3E50; font-size: 20px; font-weight: bold;">¡Venta Procesada!</h3>
+
+                <p id="modal-mensaje-texto" style="font-size: 15px; color: #34495E; margin: 10px 0; font-weight: 600;"></p>
+                <p id="modal-fechahora-texto" style="font-size: 13px; color: #7F8C8D; margin-top: 15px; margin-bottom: 20px; border-top: 1px dashed #E2E8F0; padding-top: 10px;"></p>
+                <button onclick="cerrarAlertaModal()" style="background-color: #27AE60; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; width: 100%;">Aceptar</button>
+            </div>
+        </div>
+
+        <!-- ========================================================
+            💵 MODAL MAESTRO: CIERRE DE JORNADA Y CUADRATURA DE CAJA
+        ======================================================== -->
+        <div id="modal-cuadratura-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center;">
+            <div style="background: #ffffff; padding: 25px 30px; border-radius: 16px; width: 90%; max-width: 550px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; color: #1e293b;">
+                
+                <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px dashed #e2e8f0; padding-bottom: 12px;">
+                    <h3 style="margin: 0; color: #c0392b; font-size: 22px; font-weight: 800;">🔒 Proceso de Cuadratura y Cierre de Caja</h3>
+                    <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px; font-weight: 600;">Desglose físico de efectivo disponible en caja</p>
+                </div>
+            
+                <form id="form-cuadratura-maestra" oninput="calcularTotalCuadraturaReal()">
+                    <!-- SECCIÓN: BILLETES -->
+                    <h4 style="margin: 10px 0; color: #2c3e50; font-size: 14px; border-left: 4px solid #27ae60; padding-left: 8px;">💵 Desglose de Billetes</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$20.000 (Cantidad)</label>
+                            <input type="number" id="b_20000" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$10.000 (Cantidad)</label>
+                            <input type="number" id="b_10000" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$5.000 (Cantidad)</label>
+                            <input type="number" id="b_5000" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$1.000 (Cantidad)</label>
+                            <input type="number" id="b_1000" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                    </div>
+                
+                    <!-- SECCIÓN: MONEDAS -->
+                    <h4 style="margin: 10px 0; color: #2c3e50; font-size: 14px; border-left: 4px solid #2980b9; padding-left: 8px;">🪙 Desglose de Monedas</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$500 (Cantidad)</label>
+                            <input type="number" id="m_500" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$100 (Cantidad)</label>
+                            <input type="number" id="m_100" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$50 (Cantidad)</label>
+                            <input type="number" id="m_50" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$5 (Cantidad)</label>
+                            <input type="number" id="m_5" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">$1 (Cantidad)</label>
+                            <input type="number" id="m_1" min="0" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;">
+                        </div>
+                    </div>
+                
+                    <!-- VISOR DINÁMICO DE TOTAL CONTEO -->
+                    <div style="background: #f8fafc; border: 2px solid #e2e8f0; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Arqueado Físicamente</span>
+                        <div id="visor-total-cuadratura" style="font-size: 28px; font-weight: 900; color: #1e293b; margin-top: 4px;">$0</div>
+                    </div>
+                
+                    <!-- ACCIONES -->
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" onclick="cerrarVentanaModalCuadratura()" style="width: 40%; background: #64748b; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+                        <button type="button" onclick="enviarCuadraturaServidorReal(event)" style="width: 60%; background: #c0392b; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer;">Finalizar Turno y Cerrar 🔐</button>
+                    </div>
+                </form>
+            
+            </div>
+        </div>
+
+        <!-- ========================================================
+            💵 MODAL MAESTRO: INICIO DE JORNADA Y APERTURA DE CAJA
+        ======================================================== -->
+        <div id="modal-apertura-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); z-index: 99998; align-items: center; justify-content: center;">
+            <div style="background: #ffffff; padding: 30px; border-radius: 16px; width: 90%; max-width: 450px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); color: #1e293b; text-align: center;">
+
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🏪</div>
+                    <h3 style="margin: 0; color: #2c3e50; font-size: 22px; font-weight: 800;">Apertura de Caja Obligatoria</h3>
+                    <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px; font-weight: 600;">Indique el efectivo disponible para dar vueltos / sencillo</p>
+                </div>
+            
+                <form id="form-apertura-caja" onsubmit="enviarAperturaCajaServidor(event)">
+                    <div style="margin-bottom: 20px; text-align: left;">
+                        <label for="monto_apertura_input" style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 8px;">Monto Inicial en Efectivo ($)</label>
+                        <input type="number" id="monto_apertura_input" min="0" value="50000" required style="width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 18px; font-weight: 800; text-align: center; color: #1e293b;">
+                    </div>
+                
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="document.getElementById('modal-apertura-overlay').style.display='none'" style="width: 35%; background: #64748b; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer;">
+                            Cancelar
+                        </button>
+                        <button type="submit" style="width: 65%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(39, 174, 96, 0.3);">
+                            🚀 Abrir Caja e Iniciar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <!-- CONTROLADORES JAVASCRIPT COORDINADOS -->
+    <script>
+        // ========================================================
+        // 💸 1. VARIABLES GLOBALES DEL SISTEMA
+        // ========================================================
+        var cart = [];
+        var contadorTicketsDemo = 1;
+        var mesasOcupadas = JSON.parse(localStorage.getItem('safari_mesas_ocupadas')) || [];
+        var letraZonaActivaMonitor = 'A'; 
+        var cajaAbiertaActualmente = false;
+        var jornadaPausadaActualmente = false;
+        // ========================================================
+        // 🍔 FUNCIÓN INTEGRADORA CONFIGURADA POR ROLES
+        // ========================================================
+        function cambiarAPantallaKDS() {
+            document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            const panelKDS = document.getElementById('kds');
+            const btnKDS = document.getElementById('btn-kds');
+            if (panelKDS) panelKDS.style.display = 'block';
+            if (btnKDS) btnKDS.classList.add('active');
+
+            const rolUsuario = "{{ usuario_rol_django }}";
+            const colsCocina = document.querySelectorAll('.kds-cocina-col');
+            const colsBarra = document.querySelectorAll('.kds-barra-col');
+            const btnMesas = document.getElementById('btn-mesas');
+            const btnVentas = document.getElementById('btn-ventas');
+
+            if (rolUsuario === 'Cocinero' || rolUsuario === 'Cocina') {
+                colsBarra.forEach(b => b.style.setProperty('display', 'none', 'important'));
+                colsCocina.forEach(col => {
+                    col.style.setProperty('display', 'flex', 'important');
+                    col.style.setProperty('flex', '1', 'important');
+                });
+                if (btnVentas) btnVentas.style.display = 'none';
+                if (btnKDS) btnKDS.style.setProperty('order', '1', 'important');
+                if (btnMesas) btnMesas.style.setProperty('order', '2', 'important');
+            } else if (rolUsuario === 'Cajero' || rolUsuario === 'Administrador') {
+                colsCocina.forEach(col => col.style.setProperty('display', 'none', 'important'));
+                colsBarra.forEach(b => {
+                    b.style.setProperty('display', 'flex', 'important');
+                    b.style.setProperty('flex', '1', 'important');
+                });
+                if (btnVentas) btnVentas.style.display = 'block';
+                if (btnKDS) btnKDS.style.setProperty('order', '0', 'important');
+                if (btnMesas) btnMesas.style.setProperty('order', '0', 'important');
+            }
+        }
+        // =======================================================================
+        // 🏃‍♂️ TERMINAL EXCLUSIVA DEL MESERO MOBILE (BLINDAJE DE VISIBILIDAD)
+        // =======================================================================
+        function cambiarAPantallaMesero() {
+            // 1. Apagamos de forma obligatoria todas las pantallas del Punto de Venta
+            var panelVentas = document.getElementById('ventas');
+            var panelMesas = document.getElementById('mesas');
+            var panelKDS = document.getElementById('kds');
+
+            if (panelVentas) panelVentas.style.setProperty('display', 'none', 'important');
+            if (panelMesas) panelMesas.style.setProperty('display', 'none', 'important');
+            if (panelKDS) panelKDS.style.setProperty('display', 'none', 'important');
+        
+            // Desactivamos visualmente los botones superiores de navegación de Caja
+            document.querySelectorAll('.tab-btn').forEach(function(b) { 
+                b.classList.remove('active'); 
+            });
+            // 2. Encendemos de forma única la terminal móvil elástica del Mesero
+            var panelMesero = document.getElementById('monitor-mesero-movil');
+            var btnMesero = document.getElementById('btn-mesero');
+        
+            if (panelMesero) {
+                panelMesero.style.setProperty('display', 'block', 'important'); 
+            }
+
+            var btnVentas = document.getElementById('btn-ventas');
+            var btnMesasTab = document.getElementById('btn-mesas');
+            var btnKdsTab = document.getElementById('btn-kds');
+
+            if (btnVentas) btnVentas.style.setProperty('display', 'none', 'important');
+            if (btnMesasTab) btnMesasTab.style.setProperty('display', 'none', 'important');
+            if (btnKdsTab) btnKdsTab.style.setProperty('display', 'none', 'important');
+        
+            if (btnMesero) {
+                btnMesero.style.setProperty('display', 'inline-block', 'important'); 
+                btnMesero.classList.add('active'); 
+            }
+        
+            // 3. Forzamos el redibujado de las alertas leyendo el estado real de MySQL
+            if (typeof renderAlertasCelularMesero === 'function') {
+                renderAlertasCelularMesero();
+            }
+        }
+
+        // ========================================================
+        // 💸 INICIALIZACIÓN AL CARGAR LA PÁGINA (100% BACKEND)
+        // ========================================================
+        const ROL_USUARIO_ACTUAL = "{{ usuario_rol_django }}";
+        var listaMesasMaestra = [];
+        var mesasOcupadas = [];
+
+        window.onload = async function() {
+            const rolUsuario = "{{ usuario_rol_django }}";
+            console.log("[SAFARI] Rol operativo detectado:", rolUsuario);
+
+            if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                await sincronizarEstadoDesdeBackend();
+            }
+            // 2. Inicializar selectores limpios
+            const selectMesa = document.getElementById('cart-mesa-select');
+            if (selectMesa) {
+                selectMesa.value = '';
+            }
+    
+            const selectSeccion = document.getElementById('cart-seccion-select');
+            if (selectSeccion) {
+                selectSeccion.value = '';
+            }
+        
+            // 3. Enrutamiento automático según rol
+            if (rolUsuario === 'Cocinero' || rolUsuario === 'Cocina') {
+                if (typeof cambiarAPantallaKDS === 'function') cambiarAPantallaKDS();
+                if (document.getElementById('btn-ventas')) document.getElementById('btn-ventas').style.display = 'none';
+                if (document.getElementById('btn-mesero')) document.getElementById('btn-mesero').style.display = 'none';
+            } 
+            else if (rolUsuario === 'Mesero') {
+                if (typeof cambiarAPantallaMesero === 'function') cambiarAPantallaMesero();
+            } 
+            else {
+                const pantallaVentas = document.getElementById('ventas');
+                if (pantallaVentas) pantallaVentas.style.display = 'block';
+
+                const primerBotonCat = document.querySelector('.categories-bar .category-pill');
+                if (typeof filtrarProductosPorCategoria === 'function') {
+                    filtrarProductosPorCategoria('comidarapida', primerBotonCat);
+                }
+            
+                const btnVentas = document.getElementById('btn-ventas');
+                if (btnVentas) btnVentas.style.display = 'block';
+                if (document.getElementById('btn-mesero')) document.getElementById('btn-mesero').style.display = 'none';
+            }
+
+            updateCartUI();
+            if (typeof verificarSesionCajaActiva === 'function') {
+                await verificarSesionCajaActiva();
+            }
+            setInterval(async function() {
+                if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                    await sincronizarEstadoDesdeBackend();
+                }
+                if (typeof verificarSesionCajaActiva === 'function') {
+                    await verificarSesionCajaActiva();
+                }
+            }, 3000);
+        };
+
+        // ========================================================
+        // 🎛️ FILTRO MAESTRO DE CATÁLOGO Y PINTOR DINÁMICO EN VIVO
+        // ========================================================
+        var productosCatalogoReal = []; // Almacén en memoria global para el catálogo fresquito
+        var categoriaActivaVentas = 'comidarapida';
+
+        function filtrarProductosPorCategoria(categoria, elementoBoton) {
+            // 1. Limpiar el buscador rápido si tenía texto escrito
+            const inputBuscador = document.getElementById('buscador-productos-ventas');
+            const btnLimpiar = document.getElementById('btn-limpiar-buscador');
+            if (inputBuscador) inputBuscador.value = '';
+            if (btnLimpiar) btnLimpiar.style.display = 'none';
+
+            // 2. Asegurar que todas las tarjetas vuelvan a ser visibles
+            document.querySelectorAll('.catalog-section .product-card').forEach(card => {
+                card.style.display = '';
+            });
+        
+            // 3. Marcar visualmente el botón seleccionado
+            document.querySelectorAll('.category-pill').forEach(pill => pill.classList.remove('active'));
+            if (elementoBoton) elementoBoton.classList.add('active');
+        
+            categoriaActivaVentas = (categoria || 'comidarapida').toLowerCase().trim();
+        
+            // 4. Mostrar únicamente la cuadrícula de la categoría elegida
+            const secComida = document.getElementById('seccion-comidarapida');
+            const secBebestibles = document.getElementById('seccion-bebestibles');
+            const secSouvenirs = document.getElementById('seccion-souvenirs');
+        
+            if (secComida) secComida.style.display = (categoriaActivaVentas === 'comidarapida') ? 'block' : 'none';
+            if (secBebestibles) secBebestibles.style.display = (categoriaActivaVentas === 'bebestibles') ? 'block' : 'none';
+            if (secSouvenirs) secSouvenirs.style.display = (categoriaActivaVentas === 'souvenirs') ? 'block' : 'none';
+        }
+
+        function renderCatalogoDinamicaVentas() {
+            renderCatalogoDinamicoVentas();
+        }
+
+        function renderCatalogoDinamicoVentas() {
+            const gridComida = document.getElementById('grid-cat-comidarapida');
+            const gridBebestibles = document.getElementById('grid-cat-bebestibles');
+            const gridSouvenirs = document.getElementById('grid-cat-souvenirs');
+        
+            if (!gridComida || !gridBebestibles || !gridSouvenirs) return;
+        
+            // 1. Leer configuración de Segmentación por Terminal guardada en admin.html
+            const segConfig = JSON.parse(localStorage.getItem('safari_segmentacion_terminales') || 'null');
+            const catsPermitidas = segConfig && Array.isArray(segConfig.caja)
+                ? segConfig.caja
+                : ['comidarapida', 'bebestibles', 'souvenirs'];
+        
+            // 2. Mostrar u ocultar los botones superiores de categoría según la segmentación
+            const botonesCat = document.querySelectorAll('.categories-bar .category-pill');
+            botonesCat.forEach(btn => {
+                const onclickAttr = btn.getAttribute('onclick') || '';
+                if (onclickAttr.includes('comidarapida')) {
+                    btn.style.display = catsPermitidas.includes('comidarapida') ? '' : 'none';
+                } else if (onclickAttr.includes('bebestibles')) {
+                    btn.style.display = catsPermitidas.includes('bebestibles') ? '' : 'none';
+                } else if (onclickAttr.includes('souvenirs')) {
+                    btn.style.display = catsPermitidas.includes('souvenirs') ? '' : 'none';
+                }
+            });
+        
+            gridComida.innerHTML = '';
+            gridBebestibles.innerHTML = '';
+            gridSouvenirs.innerHTML = '';
+        
+            // 3. Pintar únicamente los productos de las categorías habilitadas
+            productosCatalogoReal.forEach(function(prod) {
+                const catProd = (prod.categoria || 'comidarapida').toLowerCase().trim();
+            
+                // Si la categoría está deshabilitada en Segmentación por Terminal, no se muestra
+                if (!catsPermitidas.includes(catProd)) return;
+            
+                const nombreItem = prod.nombre || prod.name || 'Sin Nombre';
+                const precioItem = Number(prod.precio || prod.price || 0);
+            
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.setAttribute('data-categoria', catProd);
+                card.style.cssText = 'padding: 8px 10px !important; min-height: 78px !important; height: auto !important; border-radius: 10px !important; display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center;';
+                card.onclick = function() {
+                    addItem(nombreItem, precioItem, catProd);
+                };
+            
+                card.innerHTML = `
+                    <h4 style="font-size: 12.5px !important; line-height: 1.2 !important; margin: 0 0 5px 0 !important;">${nombreItem}</h4>
+                    <div class="price" style="font-size: 14px !important; margin: 0 !important;">$${precioItem.toLocaleString('es-CL')}</div>
+                `;
+            
+                if (catProd === 'bebestibles' || catProd === 'barra') {
+                    gridBebestibles.appendChild(card);
+                } else if (catProd === 'souvenirs') {
+                    gridSouvenirs.appendChild(card);
+                } else {
+                    gridComida.appendChild(card);
+                }
+            });
+        
+            // 4. Conservar el filtro activo si el usuario tiene algo escrito en el buscador
+            const inputBuscador = document.getElementById('buscador-productos-ventas');
+            if (inputBuscador && inputBuscador.value.trim() !== '') {
+                buscarProductosEnTiempoReal(inputBuscador.value);
+            }
+        }
+
+        // ========================================================
+        // ⚡ FILTRO DINÁMICO SELECTOR DE MESAS POR LETRA
+        // ========================================================
+        function filtrarMesasPorLetra() {
+            const letraElegida = document.getElementById('cart-seccion-select').value;
+            const gridBotones = document.getElementById('grid-botones-mesas-venta');
+            const inputMesa = document.getElementById('cart-mesa-select');
+            const badgeElegida = document.getElementById('badge-mesa-elegida');
+
+            if (!gridBotones || !inputMesa) return;
+
+            // Limpiar selección previa al cambiar de zona
+            inputMesa.value = '';
+            if (badgeElegida) {
+                badgeElegida.innerText = 'Sin mesa elegida';
+                badgeElegida.style.background = '#F1F5F9';
+                badgeElegida.style.color = '#475569';
+            }
+        
+            if (!letraElegida) {
+                gridBotones.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; font-size: 12px; color: #64748B; padding: 6px; background: #F8FAFC; border-radius: 6px;">Elija una sección para ver sus mesas</div>';
+                return;
+            }
+        
+            // Ordenar numéricamente de menor a mayor (A1, A2, A3... A10, A24)
+            const mesasZona = listaMesasMaestra
+                .filter(m => (m.numero || '').toString().trim().toUpperCase().startsWith(letraElegida))
+                .sort((a, b) => {
+                    const numA = parseInt((a.numero || '').replace(/\D/g, ''), 10) || 0;
+                    const numB = parseInt((b.numero || '').replace(/\D/g, ''), 10) || 0;
+                    return numA - numB;
+                });
+            
+            gridBotones.innerHTML = '';
+            
+            mesasZona.forEach(m => {
+                const codigoMesa = (m.numero || '').toString().trim().toUpperCase().substring(0, 15);
+                const ocupada = mesasOcupadas.includes(codigoMesa);
+            
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerText = codigoMesa;
+                btn.title = ocupada ? `Mesa ${codigoMesa} (Ocupada)` : `Mesa ${codigoMesa} (Disponible)`;
+                btn.style.cssText = `
+                    padding: 6px 4px;
+                    border-radius: 6px;
+                    font-weight: 800;
+                    font-size: 12px;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                    border: 2px solid ${ocupada ? '#D35400' : '#27AE60'};
+                    background-color: ${ocupada ? '#FDEBD0' : '#EAFAF1'};
+                    color: ${ocupada ? '#A04000' : '#1E8449'};
+                `;
+            
+                btn.onclick = function() {
+                    // Desmarcar visualmente el resto de botones
+                    gridBotones.querySelectorAll('button').forEach(b => {
+                        b.style.outline = 'none';
+                        b.style.transform = 'scale(1)';
+                    });
+                
+                    // Marcar el botón seleccionado
+                    btn.style.outline = '3px solid #2C3E50';
+                    btn.style.transform = 'scale(1.05)';
+                    inputMesa.value = codigoMesa;
+                
+                    if (badgeElegida) {
+                        badgeElegida.innerText = `✅ Mesa ${codigoMesa}`;
+                        badgeElegida.style.background = '#D4EFDF';
+                        badgeElegida.style.color = '#145A32';
+                    }
+                };
+            
+                gridBotones.appendChild(btn);
+            });
+        }
+
+        // ========================================================
+        // 💸 4. GESTIÓN DEL CARRITO (CON MODIFICACIÓN DE PRECIO Y MÁXIMO 20 POR PRODUCTO)
+        // ========================================================
+        function addItem(name, price, categoria) {
+            if (!turnoIniciado) {
+                mostrarAlertaModal("⚠️ Turno cerrado: Presione 'Iniciar Turno' para comenzar a registrar productos.", "alerta");
+                return;
+            }
+
+            const nombreLimpio = (name || '').trim();
+            const normalizar = s => s.toLowerCase().replace(/\s+/g, ' ').trim();
+
+            var existingIndex = cart.findIndex(item => normalizar(item.name) === normalizar(nombreLimpio));
+
+            if (existingIndex > -1) {
+                if (cart[existingIndex].cantidad >= 20) {
+                    mostrarAlertaModal("⚠️ Límite alcanzado: Máximo 20 unidades de \"" + nombreLimpio + "\" por pedido.", "alerta");
+                    return;
+                }
+                cart[existingIndex].cantidad += 1;
+            } else {
+                cart.push({
+                    name: nombreLimpio,
+                    price: price,
+                    categoria: categoria || 'comidarapida',
+                    cantidad: 1
+                });
+            }
+            updateCartUI();
+        }
+
+        // 🛠️ REQUERIMIENTO EXTRAÍDO DEL DIAGRAMA: Permite sobreescribir el precio unitario por convenios
+        function modificarPrecioManual(index, nuevoPrecio) {
+            var precioNum = parseFloat(nuevoPrecio);
+            if (!isNaN(precioNum) && precioNum >= 0 && cart[index]) {
+                cart[index].price = precioNum;
+                updateCartUI(); // Recalcula el subtotal y total general al instante
+            }
+        }
+        
+        function cambiarCantidadItem(index, delta) {
+            if (!cart[index]) return;
+
+            if (delta > 0 && cart[index].cantidad >= 20) {
+                mostrarAlertaModal("⚠️ Límite alcanzado: Máximo 20 unidades de \"" + cart[index].name + "\" por pedido.", "alerta");
+                return;
+            }
+
+            cart[index].cantidad += delta;
+            if (cart[index].cantidad <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartUI();
+        }
+        
+        function eliminarItemCarrito(index) {
+            if (!cart[index]) return;
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+        
+        function clearCart() {
+            cart = [];
+            updateCartUI();
+        }
+
+        // =======================================================================
+        // 🛒 ACTUALIZACIÓN VISUAL DEL CARRITO (FILAS COMPACTAS Y CLARAS)
+        // =======================================================================
+        function updateCartUI() {
+            const listContainer = document.getElementById('cart-dynamic-list');
+            const emptyMsg = document.getElementById('cart-empty-msg');
+            const totalEl = document.getElementById('cart-total-value');
+
+            if (!listContainer || !totalEl) return;
+
+            listContainer.innerHTML = '';
+            let totalGeneral = 0;
+
+            if (!Array.isArray(cart) || cart.length === 0) {
+                if (emptyMsg) emptyMsg.style.display = 'block';
+                totalEl.innerText = '$0';
+                return;
+            }
+            if (emptyMsg) emptyMsg.style.display = 'none';
+            cart.forEach((item, index) => {
+                const subtotal = item.price * item.cantidad;
+                totalGeneral += subtotal;
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; padding: 7px 10px; border-radius: 6px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); gap: 8px;';
+                itemDiv.innerHTML = `
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; font-size: 13px; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.name}">
+                            ${item.name}
+                        </div>
+                        <div style="font-size: 11px; color: #64748B; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                            <span>Unit: $</span>
+                            <input type="number" min="0" value="${item.price}" onchange="actualizarPrecioUnitarioItem(${index}, this.value)" style="width: 65px; padding: 2px 4px; border: 1px solid #CBD5E1; border-radius: 4px; font-size: 11px; font-weight: 700; color: #1E293B;">
+                            <span>· <strong style="color: #27AE60;">Sub: $${subtotal.toLocaleString('es-CL')}</strong></span>
+                        </div>
+                    </div>
+                
+                    <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+                        <button type="button" onclick="cambiarCantidadItem(${index}, -1)" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">-</button>
+                        <span style="font-weight: 800; font-size: 13px; min-width: 18px; text-align: center;">${item.cantidad}</span>
+                        <button type="button" onclick="cambiarCantidadItem(${index}, 1)" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">+</button>
+                        <button type="button" onclick="removeItem(${index})" style="width: 24px; height: 24px; border: none; background: #E74C3C; color: white; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 2px;">✕</button>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        
+            totalEl.innerText = '$' + totalGeneral.toLocaleString('es-CL');
+        }
+
+        function removeItem(index) {
+            if (!Array.isArray(cart) || !cart[index]) return;
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+
+        function actualizarPrecioUnitarioItem(index, nuevoValor) {
+            if (!cart[index]) return;
+            const precioLimpio = Math.max(0, parseInt(nuevoValor, 10) || 0);
+            cart[index].price = precioLimpio;
+            updateCartUI();
+        }
+
+        // ========================================================
+        // 🔒 CONTROL DE ESTADO DEL TURNO (BLOQUEO DE VENTAS Y COMPROBANTE)
+        // ========================================================
+        var turnoIniciado = false;
+
+        function actualizarBloqueoPorTurno(estaAbierto) {
+            turnoIniciado = Boolean(estaAbierto);
+            const btnComprobante = document.querySelector('button[onclick*="procesarVentaWebSocket"]');
+
+            if (btnComprobante) {
+                btnComprobante.disabled = !turnoIniciado;
+                btnComprobante.style.opacity = turnoIniciado ? '1' : '0.45';
+                btnComprobante.style.cursor = turnoIniciado ? 'pointer' : 'not-allowed';
+            }
+        }
+
+        // ========================================================
+        // 💸 ENVIAR Y GUARDAR PEDIDO REAL EN EL BACKEND (MYSQL)
+        // ========================================================
+        async function procesarVentaWebSocket(event) {
+            if (event) event.preventDefault();
+
+            if (!turnoIniciado) {
+                mostrarAlertaModal("⚠️ Turno cerrado: Presione 'Iniciar Turno' antes de emitir comprobantes.", "alerta");
+                return;
+            }
+                
+            if (cart.length === 0) {
+                mostrarAlertaModal("⚠️ El carrito está vacío. Añada productos antes de procesar.", "alerta");
+                return;
+            }
+        
+            const modalidadEntrega = document.getElementById('cart-modalidad-select').value;
+            const mesaInput = document.getElementById('cart-mesa-select');
+            let mesaId = 'MESON';
+        
+            if (modalidadEntrega === 'MESA') {
+                mesaId = mesaInput ? mesaInput.value.trim().toUpperCase().substring(0, 15) : '';
+            
+                if (!mesaId || mesaId === "" || mesaId === "MESON") {
+                    mostrarAlertaModal("⚠️ Debe hacer clic en una mesa de la cuadrícula antes de procesar.", "alerta");
+                    return;
+                }
+            }
+        
+            // 📝 LIMPIEZA DE NOTAS: Solo permite letras, tildes, números, espacios, coma (,) y punto (.)
+            const notaInput = document.getElementById('cart-observaciones');
+            const notaTexto = notaInput 
+                ? notaInput.value.replace(/[^a-zA-ZÁÉÍÓÚáéíóúÑñÜü0-9\s,.]/g, '').trim() 
+                : '';
+        
+            const pedidoPayload = {
+                mesa_numero: mesaId,
+                modalidad_entrega: modalidadEntrega,
+                observaciones: notaTexto,
+                total: cart.reduce((acc, item) => acc + (item.price * item.cantidad), 0),
+                productos: cart.map(item => ({
+                    name: item.name,
+                    price: item.price,
+                    cantidad: item.cantidad,
+                    categoria: item.categoria
+                }))
+            };
+        
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+            
+                const response = await fetch('/api/pedido/guardar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify(pedidoPayload)
+                });
+            
+                const data = await response.json();
+            
+                if (data.status === 'success') {
+                    mostrarAlertaModal("Pedido registrado exitosamente en el servidor de Parque Safari.", "exito");
+                
+                    // 1. Limpiar carrito y notas
+                    cart = [];
+                    updateCartUI();
+                    if (notaInput) notaInput.value = '';
+                
+                    // 2. Restaurar modalidad a MESA y limpiar la cuadrícula de botones
+                    const modalidadSelect = document.getElementById('cart-modalidad-select');
+                    if (modalidadSelect) modalidadSelect.value = 'MESA';
+                    if (typeof conmutarObligatoriedadMesa === 'function') {
+                        conmutarObligatoriedadMesa();
+                    }
+                
+                    // 3. Sincronizar estado inmediato con Django
+                    if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                        await sincronizarEstadoDesdeBackend();
+                    }
+                } else {
+                    mostrarAlertaModal("⚠️ Error del servidor: " + data.message, "alerta");
+                }
+            } catch (error) {
+                console.error("Error en la conexión HTTP con Django:", error);
+                mostrarAlertaModal("❌ No se pudo establecer conexión con el backend de Django.", "alerta");
+            }
+        }
+
+        // =======================================================================
+        // 🔄 MONITOR MAESTRO KDS Y MAPA: REFRESCO DIRECTO DESDE DJANGO
+        // =======================================================================
+                async function sincronizarEstadoDesdeBackend() {
+            try {
+                const response = await fetch('/api/estado-general/');
+                const data = await response.json();
+            
+                if (data.status === 'success') {
+                    window.ultimoEstadoBackend = data;
+
+                    // 🔒 SINCRONIZACIÓN AUTOMÁTICA DEL ESTADO DEL TURNO
+                    const btnsTurno = Array.from(document.querySelectorAll('button')).filter(b => 
+                        b.innerText.includes('Turno') || b.innerText.includes('Jornada')
+                    );
+                    const textoVisible = btnsTurno.map(b => b.innerText.toLowerCase()).join(' ');
+
+                    const abiertoPorBackend = (data.jornada_abierta === true || data.turno_abierto === true || data.estado_turno === 'ABIERTA' || data.estado_jornada === 'ABIERTA');
+                    const abiertoPorBoton = textoVisible.includes('cerrar turno') || textoVisible.includes('cerrar jornada');
+                    const estaPausado = (data.jornada_pausada === true || data.turno_pausado === true) || textoVisible.includes('reanudar');
+
+                    if (typeof actualizarBloqueoPorTurno === 'function') {
+                        actualizarBloqueoPorTurno((abiertoPorBackend || abiertoPorBoton) && !estaPausado);
+                    }
+                
+                    // 1. Catálogo dinámico de productos
+                    productosCatalogoReal = data.productos || data.productos_admin || [];
+                    if (typeof renderCatalogoDinamicoVentas === 'function') {
+                        renderCatalogoDinamicoVentas();
+                    }
+                
+                    // 2. Mesas maestras y secciones dinámicas desde MySQL
+                    if (Array.isArray(data.mesas)) {
+                        listaMesasMaestra = data.mesas;
+                        if (typeof actualizarSelectoresYBarrasDeMesas === 'function') {
+                            actualizarSelectoresYBarrasDeMesas();
+                        }
+                    }
+                    mesasOcupadas = Array.isArray(data.mesas_ocupadas) ? data.mesas_ocupadas : [];
+                
+                    if (typeof renderTarjetasMesasMonitor === 'function') {
+                        renderTarjetasMesasMonitor();
+                    }
+                
+                    const rolActual = "{{ usuario_rol_django }}";
+                    const colsCocina = document.querySelectorAll('.kds-cocina-col');
+                    const colsBarra = document.querySelectorAll('.kds-barra-col');
+                
+                    // 3. Visibilidad por rol en KDS
+                    if (rolActual === 'Cocinero' || rolActual === 'Cocina') {
+                        colsCocina.forEach(c => c.style.setProperty('display', 'flex', 'important'));
+                        colsBarra.forEach(b => b.style.setProperty('display', 'none', 'important'));
+                    } else {
+                        colsCocina.forEach(c => c.style.setProperty('display', 'none', 'important'));
+                        colsBarra.forEach(b => b.style.setProperty('display', 'flex', 'important'));
+                    }
+                
+                    // =======================================================================
+                    // 🍔 COLUMNA 1: EN PREPARACIÓN (COCINA)
+                    // =======================================================================
+                    const contenedorCocina = document.getElementById('container-cocina');
+                    if (contenedorCocina && (rolActual === 'Cocinero' || rolActual === 'Cocina')) {
+                        if (!data.pedidos_cocina || data.pedidos_cocina.length === 0) {
+                            contenedorCocina.innerHTML = '<p id="no-cocina-msg" style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">No hay comandas pendientes en Cocina.</p>';
+                        } else {
+                            contenedorCocina.innerHTML = '';
+                            data.pedidos_cocina.forEach(function(ticket) {
+                                const ticketDiv = document.createElement('div');
+                                ticketDiv.className = 'safari-ticket-real';
+                                ticketDiv.style = "background:#fff; border-left:5px solid #27ae60; padding:12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.08); text-align:left; color:#1E293B; width:100%; box-sizing:border-box;";
+                            
+                                const itemsHTML = (ticket.items || []).map(item =>
+                                    `<li style="padding:3px 0; border-bottom:1px dashed #eee; list-style:none; color:#d35400; font-weight:600; font-size:13px;">🔸 ${item.cantidad}x ${item.nombre}</li>`
+                                ).join('');
+                            
+                                const notaHTML = ticket.observaciones ? `
+                                    <div style="margin-top: 8px; padding: 5px 8px; background-color: #ffc0a8; border-left: 3px solid #ff4800; border-radius: 4px; font-size: 12px; color: black; font-weight: bold;">
+                                        📝 NOTA: ${ticket.observaciones}
+                                    </div>` : '';
+                                
+                                const etiquetaUbicacion = (ticket.mesa === 'MESON') ? 'Mostrador (Mesón)' : 'Mesa ' + ticket.mesa;
+                                
+                                ticketDiv.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px; color:#2c3e50; font-size:14px;">
+                                        <span>📋 Ticket #${ticket.numero_ticket}</span>
+                                        <span style="color:#c0392b; font-weight: bold;">${etiquetaUbicacion}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; font-weight: 600;">🕒 Hora: ${ticket.hora}</div>
+                                    <ul style="padding-left:0; margin:0; margin-bottom: 5px;">${itemsHTML}</ul>
+                                    ${notaHTML}
+                                    <button onclick="gestionarCicloCocinaReal(this, ${ticket.id}, '${ticket.mesa}')" style="margin-top:8px; width:100%; background:#27ae60; color:white; border:none; padding:7px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">✔ Entregar</button>
+                                `;
+                                contenedorCocina.appendChild(ticketDiv);
+                            });
+                        }
+                    }
+                    // =======================================================================
+                    // 🏃‍♂️ COLUMNA 2: ENTREGADO A MESERO (En camino a la mesa)
+                    // =======================================================================
+                    const contCocinaMesero = document.getElementById('container-cocina-mesero');
+                    if (contCocinaMesero && (rolActual === 'Cocinero' || rolActual === 'Cocina')) {
+                        if (!data.pedidos_cocina_mesero || data.pedidos_cocina_mesero.length === 0) {
+                            contCocinaMesero.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Sin pedidos en manos del mesero.</p>';
+                        } else {
+                            contCocinaMesero.innerHTML = '';
+                            data.pedidos_cocina_mesero.forEach(function(ticket) {
+                                const itemsHTML = (ticket.items || []).map(i =>
+                                    `<li style="padding:3px 0; border-bottom:1px dashed #eee; list-style:none; color:#d35400; font-weight:600; font-size:13px;">🔸 ${i.cantidad}x ${i.nombre}</li>`
+                                ).join('');
+                            
+                                const div = document.createElement('div');
+                                div.className = 'safari-ticket-real';
+                                div.style = "background:#fff; border-left:5px solid #E67E22; padding:12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.08); text-align:left; color:#1E293B; width:100%; box-sizing:border-box;";
+                                div.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px; color:#2c3e50; font-size:14px;">
+                                        <span>📋 Ticket #${ticket.numero_ticket}</span>
+                                        <span style="color:#E67E22; font-weight: bold;">Mesa ${ticket.mesa}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; font-weight: 600;">🕒 Hora: ${ticket.hora}</div>
+                                    <ul style="padding-left:0; margin:0 0 6px 0;">${itemsHTML}</ul>
+                                    <div style="background:#FEF5E7; color:#D35400; padding:5px; border-radius:4px; text-align:center; font-weight:bold; font-size:11px;">
+                                        🏃‍♂️ Entregado a Mesero (En camino)
+                                    </div>
+                                `;
+                                contCocinaMesero.appendChild(div);
+                            });
+                        }
+                    }
+                    // =======================================================================
+                    // ✅ COLUMNA 3: SERVIDO EN MESA (Mesa sigue ocupada en consumo)
+                    // =======================================================================
+                    const contCocinaServidos = document.getElementById('container-cocina-servidos');
+                    if (contCocinaServidos && (rolActual === 'Cocinero' || rolActual === 'Cocina')) {
+                        if (!data.pedidos_cocina_servidos || data.pedidos_cocina_servidos.length === 0) {
+                            contCocinaServidos.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Sin pedidos servidos en consumo.</p>';
+                        } else {
+                            contCocinaServidos.innerHTML = '';
+                            data.pedidos_cocina_servidos.forEach(function(ticket) {
+                                const itemsHTML = (ticket.items || []).map(i =>
+                                    `<li style="padding:3px 0; border-bottom:1px dashed #eee; list-style:none; color:#27AE60; font-weight:600; font-size:13px;">✔ ${i.cantidad}x ${i.nombre}</li>`
+                                ).join('');
+                            
+                                const div = document.createElement('div');
+                                div.className = 'safari-ticket-real';
+                                div.style = "background:#f8fff9; border-left:5px solid #27AE60; padding:12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.08); text-align:left; color:#1E293B; width:100%; box-sizing:border-box; opacity: 0.94;";
+                                div.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px; color:#2c3e50; font-size:14px;">
+                                        <span>📋 Ticket #${ticket.numero_ticket}</span>
+                                        <span style="color:#27AE60; font-weight: bold;">Mesa ${ticket.mesa}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; font-weight: 600;">🕒 Hora: ${ticket.hora}</div>
+                                    <ul style="padding-left:0; margin:0 0 6px 0;">${itemsHTML}</ul>
+                                    <div style="background:#E8F8F5; color:#1E8449; padding:5px; border-radius:4px; text-align:center; font-weight:bold; font-size:11px;">
+                                        ✅ Servido en Mesa (En Consumo)
+                                    </div>
+                                `;
+                                contCocinaServidos.appendChild(div);
+                            });
+                        }
+                    }
+                    // =======================================================================
+                    // 🏁 COLUMNA 4: PRODUCTOS YA FINALIZADOS (Mesa desocupada)
+                    // =======================================================================
+                    const contCocinaFinalizados = document.getElementById('container-cocina-finalizados');
+                    if (contCocinaFinalizados && (rolActual === 'Cocinero' || rolActual === 'Cocina')) {
+                        if (!data.pedidos_cocina_finalizados || data.pedidos_cocina_finalizados.length === 0) {
+                            contCocinaFinalizados.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Aún no hay pedidos finalizados.</p>';
+                        } else {
+                            contCocinaFinalizados.innerHTML = '';
+                            data.pedidos_cocina_finalizados.forEach(function(ticket) {
+                                const itemsHTML = (ticket.items || []).map(i =>
+                                    `<li style="padding:3px 0; border-bottom:1px dashed #eee; list-style:none; color:#2C3E50; font-weight:600; font-size:13px;">🏁 ${i.cantidad}x ${i.nombre}</li>`
+                                ).join('');
+                            
+                                const div = document.createElement('div');
+                                div.className = 'safari-ticket-real';
+                                div.style = "background:#f4f6f7; border-left:5px solid #34495E; padding:12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.08); text-align:left; color:#1E293B; width:100%; box-sizing:border-box; opacity: 0.88;";
+                                div.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px; color:#2c3e50; font-size:14px;">
+                                        <span>📋 Ticket #${ticket.numero_ticket}</span>
+                                        <span style="color:#34495E; font-weight: bold;">Mesa ${ticket.mesa}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; font-weight: 600;">🕒 Hora: ${ticket.hora}</div>
+                                    <ul style="padding-left:0; margin:0 0 6px 0;">${itemsHTML}</ul>
+                                    <div style="background:#EAEDED; color:#2C3E50; padding:5px; border-radius:4px; text-align:center; font-weight:bold; font-size:11px;">
+                                        🏁 Entregado y Mesa Desocupada
+                                    </div>
+                                `;
+                                contCocinaFinalizados.appendChild(div);
+                            });
+                        }
+                    }
+                    // =======================================================================
+                    // 🥤 MONITOR DE BARRA / MESÓN: PENDIENTES (CAJERO / ADMIN)
+                    // =======================================================================
+                    const contenedorBarra = document.getElementById('container-barra');
+                    if (contenedorBarra && rolActual !== 'Cocinero' && rolActual !== 'Cocina' && rolActual !== 'Mesero') {
+                        if (!data.pedidos_barra || data.pedidos_barra.length === 0) {
+                            contenedorBarra.innerHTML = '<p id="no-barra-msg" style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">No hay pedidos pendientes en Barra.</p>';
+                        } else {
+                            contenedorBarra.innerHTML = '';
+                            data.pedidos_barra.forEach(function(ticket) {
+                                const ticketDiv = document.createElement('div');
+                                ticketDiv.className = 'safari-ticket-real';
+                                ticketDiv.style = "background:#fff; border-left:5px solid #8E44AD; padding:12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.08); text-align:left; color:#1E293B; width:100%; box-sizing:border-box;";
+                            
+                                const itemsHTML = (ticket.items || []).map(item =>
+                                    `<li style="padding:3px 0; border-bottom:1px dashed #eee; list-style:none; color:#8E44AD; font-weight:600; font-size:13px;">🔸 ${item.cantidad}x ${item.nombre}</li>`
+                                ).join('');
+                            
+                                const notaHTML = ticket.observaciones ? `<div style="margin-top: 8px; padding: 5px 8px; background-color: #f4ecf7; border-left: 3px solid #8E44AD; border-radius: 4px; font-size: 12px; color: black; font-weight: bold;">📝 NOTA: ${ticket.observaciones}</div>` : '';
+                            
+                                ticketDiv.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px; color:#2c3e50; font-size:14px;">
+                                        <span>📋 Ticket #${ticket.numero_ticket}</span>
+                                        <span style="color:#8E44AD; font-weight: bold;">${ticket.mesa}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; font-weight: 600;">🕒 Hora: ${ticket.hora}</div>
+                                    <ul style="padding-left:0; margin:0; margin-bottom: 5px;">${itemsHTML}</ul>
+                                    ${notaHTML}
+                                    <button onclick="gestionarCicloBarraReal(this, ${ticket.id})" style="margin-top:8px; width:100%; background:#8E44AD; color:white; border:none; padding:7px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">✔ Despachar Mostrador</button>
+                                `;
+                                contenedorBarra.appendChild(ticketDiv);
+                            });
+                        }
+                    }
+                    // =======================================================================
+                    // 🏁 MONITOR DE BARRA / SOUVENIRS: PRODUCTOS FINALIZADOS
+                    // =======================================================================
+                    const contenedorBarraFin = document.getElementById('container-barra-finalizados');
+                    if (contenedorBarraFin && rolActual !== 'Cocinero' && rolActual !== 'Cocina' && rolActual !== 'Mesero') {
+                        if (!data.pedidos_barra_finalizados || data.pedidos_barra_finalizados.length === 0) {
+                            contenedorBarraFin.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:#1d2829; padding:20px; font-weight: bold;">Aún no hay productos finalizados en Barra.</p>';
+                        } else {
+                            contenedorBarraFin.innerHTML = '';
+                            data.pedidos_barra_finalizados.forEach(function(ticket) {
+                                const itemsHTML = (ticket.items || []).map(item =>
+                                    `<li style="padding:3px 0; border-bottom:1px dashed #eee; list-style:none; color:#2C3E50; font-weight:600; font-size:13px;">🏁 ${item.cantidad}x ${item.nombre}</li>`
+                                ).join('');
+                            
+                                const div = document.createElement('div');
+                                div.className = 'safari-ticket-real';
+                                div.style = "background:#f4f6f7; border-left:5px solid #34495E; padding:12px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.08); text-align:left; color:#1E293B; width:100%; box-sizing:border-box; opacity: 0.9;";
+                                div.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px; color:#2c3e50; font-size:14px;">
+                                        <span>📋 Ticket #${ticket.numero_ticket}</span>
+                                        <span style="color:#34495E; font-weight: bold;">${ticket.mesa}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; font-weight: 600;">🕒 Hora: ${ticket.hora}</div>
+                                    <ul style="padding-left:0; margin:0 0 6px 0;">${itemsHTML}</ul>
+                                    <div style="background:#EAEDED; color:#2C3E50; padding:5px; border-radius:4px; text-align:center; font-weight:bold; font-size:11px;">
+                                        🏁 Despachado y Finalizado
+                                    </div>
+                                `;
+                                contenedorBarraFin.appendChild(div);
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Error grave en sincronización de interfaz:", error);
+            }
+        }
+        async function marcarComandaDespachadaBackend(idPedido) {
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+            
+                await fetch('/api/kds/despachar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ pedido_id: idPedido, tipo: 'COCINA' })
+                });
+            
+                if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                    await sincronizarEstadoDesdeBackend();
+                }
+            } catch (err) {
+                console.error("Error al despachar comanda:", err);
+            }
+        }
+        // ========================================================
+        // 💸 6. CONTROL DEL MODAL DE ALERTA DINÁMICO
+        // ========================================================
+        function mostrarAlertaModal(mensaje, tipo = 'exito') {
+            const overlay = document.getElementById('custom-modal-overlay');
+            const txtTitulo = document.getElementById('modal-titulo');
+            const txtIcono = document.getElementById('modal-icono');
+            const txtMensaje = document.getElementById('modal-mensaje-texto');
+            const txtFechaHora = document.getElementById('modal-fechahora-texto');
+            const btnAceptar = overlay ? overlay.querySelector('button') : null;
+
+            if (overlay && txtMensaje && txtFechaHora) {
+                const ahora = new Date();
+                const fechaStr = ahora.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const horaStr = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+                if (tipo === 'alerta') {
+                    if (txtIcono) txtIcono.innerText = '⚠️';
+                    if (txtTitulo) txtTitulo.innerText = 'Atención';
+                    if (btnAceptar) btnAceptar.style.display = 'block'; 
+                } else {
+                    if (txtIcono) txtIcono.innerText = '✅';
+                    if (txtTitulo) {
+                        if (mensaje.includes('Jornada') || mensaje.includes('Caja') || mensaje.includes('reanudada')) {
+                            txtTitulo.innerText = '¡Estado de Jornada!';
+                        } else if (mensaje.includes('Mesa') && mensaje.includes('entregada')) {
+                            txtTitulo.innerText = '¡Plato Entregado!';
+                        } else if (mensaje.includes('Comanda') || mensaje.includes('despachado')) {
+                            txtTitulo.innerText = '¡Pedido Despachado!';
+                        } else {
+                            txtTitulo.innerText = '¡Venta Procesada!';
+                        }
+                    }
+                    if (btnAceptar) btnAceptar.style.display = 'none'; 
+                }
+            
+                txtMensaje.innerText = mensaje;
+                txtFechaHora.innerHTML = `📅 <strong>Fecha:</strong> ${fechaStr} &nbsp;|&nbsp; ⏰ <strong>Hora:</strong> ${horaStr}`;
+                overlay.style.display = 'flex';
+            
+                if (tipo === 'exito') {
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 4000);
+                }
+            }
+        }
+        
+        function cerrarAlertaModal() {
+            var overlay = document.getElementById('custom-modal-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // ========================================================
+        // 🛠️ 7. FUNCIÓN AUXILIAR: LIBERACIÓN INTELIGENTE DE MESAS
+        // ========================================================
+        function verificarYLiberarMesa(mId) {
+            if (!mId) return;
+
+            var tieneTicketsEnCocina = false;
+            var tieneTicketsEnBarra = false;
+
+            // Escanea si quedan comandas activas de esta mesa en Cocina
+            document.querySelectorAll('.ticket-mesa-header').forEach(function(el) {
+                if (el.getAttribute('data-raw-id') === mId) tieneTicketsEnCocina = true;
+            });
+
+            // Escanea si quedan comandas activas de esta mesa en Barra
+            document.querySelectorAll('.ticket-mesa-header-barra').forEach(function(el) {
+                if (el.getAttribute('data-raw-id') === mId) tieneTicketsEnBarra = true;
+            });
+
+            // 🎯 REGLA DE CONTROL CRUZADO: Solo si la mesa ya no tiene comandas en ningún monitor, vuelve a verde
+            if (!tieneTicketsEnCocina && !tieneTicketsEnBarra) {
+                if (typeof mesasOcupadas !== 'undefined') {
+                    var index = mesasOcupadas.indexOf(mId);
+                    if (index > -1) mesasOcupadas.splice(index, 1);
+                    localStorage.setItem('safari_mesas_ocupadas', JSON.stringify(mesasOcupadas));
+                }
+                
+                // RESTAURACIÓN VISUAL: Fondo blanco y borde inferior verde original del catálogo
+                var cajaMesaVisual = document.getElementById('mesa-box-' + mId);
+                var textoMesaVisual = document.getElementById('status-text-' + mId);
+                if (cajaMesaVisual && textoMesaVisual) {
+                    cajaMesaVisual.setAttribute('style', 'background-color: #ffffff !important; color: #2c3e50 !important; border-bottom: 5px solid #27ae60 !important;');
+                    textoMesaVisual.innerText = 'Estado: Disponible';
+                    
+                    var tituloMesa = cajaMesaVisual.querySelector('h3');
+                    if (tituloMesa) {
+                        tituloMesa.setAttribute('style', 'color: #2c3e50 !important; margin: 0 0 5px 0;');
+                    }
+                }
+                
+                // Habilita nuevamente la mesa como (Disponible) en el selector de ventas
+                var mesaSelect = document.getElementById('cart-mesa-select');
+                if (mesaSelect) {
+                    var opcionMesa = mesaSelect.querySelector('option[value="' + mId + '"]');
+                    if (opcionMesa) {
+                        opcionMesa.text = 'Mesa ' + mId.padStart(2, '0') + ' (Disponible)';
+                    }
+                }
+            }
+            if (typeof renderTarjetasMesasMonitor === 'function') {
+            renderTarjetasMesasMonitor();
+        }
+        }
+
+        // 3. Cambia el aspecto del botón superior según si la caja está abierta o cerrada
+        function actualizarBotonJornadaVisual(estaAbierta) {
+            cajaAbiertaActualmente = estaAbierta;
+            const btn = document.getElementById('btn-jornada-toggle');
+            if (!btn) return;
+        
+            if (estaAbierta) {
+                btn.innerText = "🔴 Cerrar Turno";
+                btn.style.backgroundColor = "#E67E22";
+            } else {
+                btn.innerText = "🟢 Iniciar Turno";
+                btn.style.backgroundColor = "#27AE60";
+            }
+        }
+
+        function cerrarSesion(e) {
+            abrirModalLogout(e);
+        }
+
+        async function gestionarJornadaCaja() {
+            const rolActual = "{{ usuario_rol_django }}";
+            const esPerfilCaja = (rolActual === 'Cajero' || rolActual === 'Administrador');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+            try {
+                const res = await fetch('/api/caja/verificar-estado/?rol=' + encodeURIComponent(rolActual));
+                const estado = await res.json();
+
+                if (estado.necesita_apertura) {
+                    if (esPerfilCaja) {
+                        const modalApertura = document.getElementById('modal-apertura-overlay');
+                        if (modalApertura) modalApertura.style.display = 'flex';
+                    } else {
+                        // Cocina inicia su turno operativo directo sin efectivo
+                        const resp = await fetch('/api/caja/abrir/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({ monto_apertura: 0, rol: rolActual })
+                        });
+                        const data = await resp.json();
+
+                        if (data.status === 'success') {
+                            actualizarBotonJornadaVisual(true, false);
+                            mostrarAlertaModal("🍳 ¡Jornada de Cocina iniciada! Monitor listo para recibir comandas.", "exito");
+                        } else {
+                            alert("⚠️ No se pudo iniciar jornada en Cocina: " + (data.message || "Error desconocido"));
+                        }
+                    }
+                } else {
+                    if (esPerfilCaja) {
+                        abrirVentanaModalCuadratura();
+                    } else {
+                        // Cocina cierra su turno operativo sin conteo de billetes
+                        if (!confirm("¿Deseas finalizar y cerrar tu Jornada de Cocina?")) return;
+
+                        const resp = await fetch('/api/caja/cerrar/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({ rol: rolActual, solo_turno_operativo: true })
+                        });
+                        const data = await resp.json();
+
+                        if (data.status === 'success') {
+                            actualizarBotonJornadaVisual(false, false);
+                            mostrarAlertaModal("🏁 Jornada de Cocina finalizada correctamente.", "exito");
+                        } else {
+                            alert("⚠️ No se pudo cerrar jornada en Cocina: " + (data.message || "Error desconocido"));
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error verificando estado de jornada:", err);
+                alert("❌ Error de conexión con el servidor al gestionar la jornada.");
+            }
+        }
+
+        // ========================================================
+        // 🚀 CONTROL CENTRALIZADO UNIFICADO DE DESPACHO KDS
+        // ========================================================
+        async function gestionarCicloCocinaReal(botonHtml, idPedido, numeroMesa) {
+            const ticketDiv = botonHtml.closest('.safari-ticket-real') || botonHtml.closest('div');
+            if (!ticketDiv) return;
+
+            ticketDiv.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            ticketDiv.style.opacity = '0';
+            ticketDiv.style.transform = 'scale(0.9) translateY(-10px)';
+
+            setTimeout(async function() {
+                ticketDiv.remove();
+            
+                try {
+                    await fetch('/api/kds/despachar/', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : ''
+                        },
+                        body: JSON.stringify({ pedido_id: idPedido, tipo: 'COCINA' })
+                    });
+                
+                    if (typeof mostrarAlertaModal === 'function') {
+                        const msgDestino = (numeroMesa === 'MESON')
+                            ? "¡Comanda lista! Pedido enrutado al mostrador del Cajero."
+                            : "¡Comanda despachada! Pedido enviado al terminal del Mesero.";
+                        mostrarAlertaModal(msgDestino, "exito");
+                    }
+                } catch (error) {
+                    console.error("❌ Error en comunicación con el servidor:", error);
+                }
+            
+                if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                    await sincronizarEstadoDesdeBackend();
+                }
+            }, 300);
+        }
+        // ========================================================
+        // 🔤 DIBUJA LOS BOTONES DE LA A A LA Z PARA EL MONITOR
+        // ========================================================
+        function renderBarraLetrasMonitor(letrasUnicas) {
+            const barra = document.getElementById('barra-letras-zonas');
+            if (!barra) return;
+            const letras = Array.isArray(letrasUnicas) && letrasUnicas.length > 0
+                ? letrasUnicas
+                : [...new Set(listaMesasMaestra.map(m => (m.numero || '').toString().trim().toUpperCase().charAt(0)).filter(l => /^[A-Z]$/.test(l)))].sort();
+            barra.innerHTML = '';
+            letras.forEach(letra => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.innerText = 'Zona ' + letra;
+            
+                const esActiva = (letra === letraZonaActivaMonitor);
+                btn.style.cssText = `
+                    padding: 6px 4px;
+                    border-radius: 6px;
+                    font-weight: 800;
+                    font-size: 12px;
+                    cursor: pointer;
+                    border: 1px solid ${esActiva ? '#1E8449' : '#CBD5E1'};
+                    background-color: ${esActiva ? '#27AE60' : '#F1F5F9'};
+                    color: ${esActiva ? '#FFFFFF' : '#334155'};
+                    transition: all 0.15s ease;
+                    text-align: center;
+                `;
+            
+                btn.onclick = function() {
+                    letraZonaActivaMonitor = letra;
+                    const txtTitulo = document.getElementById('titulo-zona-actual');
+                    if (txtTitulo) txtTitulo.innerText = '📍 VIENDO: ZONA ' + letra;
+                    renderBarraLetrasMonitor(letras);
+                    renderTarjetasMesasMonitor();
+                };
+            
+                barra.appendChild(btn);
+            });
+        }
+        // ========================================================
+        // 📊 RENDEREA LAS TARJETAS DE MESAS EN TIEMPO REAL
+        // ========================================================
+        function renderTarjetasMesasMonitor() {
+            if (typeof renderResumenMesasOcupadas === 'function') {
+                renderResumenMesasOcupadas();
+            }
+            const grid = document.getElementById('grid-mesas-dinamico');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const ordenadas = [...listaMesasMaestra].sort((a, b) => {
+                const numA = parseInt((a.numero || '').toString().replace(/\D/g, ''), 10) || a.id;
+                const numB = parseInt((b.numero || '').toString().replace(/\D/g, ''), 10) || b.id;
+                return numA - numB;
+            });
+            ordenadas.forEach(function(mesa) {
+                let numeroMesaLimpio = (mesa.numero || '').toString().trim().toUpperCase();
+                if (numeroMesaLimpio.length > 15) {
+                    numeroMesaLimpio = numeroMesaLimpio.substring(0, 15);
+                }
+                if (numeroMesaLimpio.startsWith(letraZonaActivaMonitor)) {
+                    const estaOcupada = mesasOcupadas.includes(numeroMesaLimpio);
+                    const card = document.createElement('div');
+                    card.className = 'mesa-card';
+                    if (estaOcupada) {
+                        card.classList.add('ocupada');
+                        card.setAttribute('style', 'background-color: #e67e22 !important; color: white !important; border-bottom: 6px solid #d35400 !important; padding: 12px; text-align: center; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.18);');
+                        card.innerHTML = `
+                            <h3 style="color: white !important; font-size: 20px; margin: 0 0 4px 0;">Mesa ${numeroMesaLimpio}</h3>
+                            <p style="font-weight: 700; font-size: 12px; margin: 0; opacity: 0.95;">🔥 Ocupada (En Consumo)</p>
+                        `;
+                    } else {
+                        card.setAttribute('style', 'background-color: #ffffff !important; color: #2c3e50 !important; border-bottom: 6px solid #27AE60 !important; padding: 12px; text-align: center; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.12);');
+                        card.innerHTML = `
+                            <h3 style="font-size: 20px; margin: 0 0 4px 0; color: #1E293B;">Mesa ${numeroMesaLimpio}</h3>
+                            <p style="font-size: 12px; margin: 0; color: #27AE60; font-weight: 700;">✅ Disponible</p>
+                        `;
+                    }
+                    grid.appendChild(card);
+                }
+            });
+        }
+        // ========================================================
+        // 🏃‍♂️ PINTOR MAESTRO DE LA TERMINAL DE ALERTAS DEL MESERO
+        // ========================================================
+        function renderAlertasCelularMesero() {
+            var contenedor = document.getElementById('lista-alertas-mesero');
+            var msgVacio = document.getElementById('no-alertas-msg');
+            if (!contenedor) return;
+            
+            // 🟢 EL SALVAVIDAS DEFINITIVO: Si el navegador está confundido por múltiples pestañas,
+            // leemos directamente la variable de contexto inyectada de forma física por Django
+            const miRolReal = sessionStorage.getItem('usuario_rol') || "{{ usuario_rol_django }}";
+            
+            // Si no somos mesero, abortamos la inyección para no sobreescribir pantallas de caja
+            if (miRolReal !== 'Mesero') return;
+            
+            if (!window.ultimoEstadoBackend || !window.ultimoEstadoBackend.pedidos_mesero || window.ultimoEstadoBackend.pedidos_mesero.length === 0) {
+                contenedor.innerHTML = '';
+                if (msgVacio) {
+                    contenedor.appendChild(msgVacio);
+                } else {
+                    contenedor.innerHTML = `
+                        <div id="no-alertas-msg" class="mesero-alerta-vacia">
+                            <span class="badge-status">📡 Sistema Sincronizado</span>
+                            <div>🎉 Todo al día: No tienes comandas listas para retirar en el mostrador del Parque Safari.</div>
+                        </div>`;
+                }
+                return;
+            }
+        
+            contenedor.innerHTML = '';
+            var listaListos = window.ultimoEstadoBackend.pedidos_mesero;
+        
+            listaListos.forEach(function(p) {
+                var div = document.createElement('div');
+                div.className = 'mesero-ticket-card';
+                    
+                var itemsHTML = '';
+                // Rescatamos el desglose validando ambas alternativas idiomáticas (nombre y name)
+                if (p.items && p.items.length > 0) {
+                    p.items.forEach(function(item) {
+                        var nombreDelProducto = item.nombre || item.name || 'Plato Safari';
+                        var cantidadDelProducto = item.cantidad || item.qty || 1;
+                        
+                        itemsHTML += `<li style="padding: 6px 0; border-bottom: 1px dashed #E2E8F0; color: #334155; font-weight: 600; font-size: 13.5px; list-style: none; display: flex; justify-content: space-between;">
+                            <span>🟢 ${nombreDelProducto}</span>
+                            <span style="color: #2ECC71; font-weight: 800;">x${cantidadDelProducto}</span>
+                        </li>`;
+                    });
+                } else {
+                    itemsHTML = `<li style="padding: 4px 0; list-style: none; color: #64748B;">Retirar del mostrador...</li>`;
+                }
+            
+                // Salvavidas absoluto para las variables de cabecera en el HTML
+                var nTicket = p.numero_ticket || p.id || '01';
+                var ubicacionMesa = p.mesa || p.mesa_numero || 'Salón';
+            
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; margin-bottom: 2px;">
+                        <span style="font-weight: 800; background: #E8F8F5; color: #117A65; padding: 4px 10px; border-radius: 20px; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase;">🔔 ¡Pedido Listo!</span>
+                        <span style="font-size: 12px; color: #64748B; font-weight: 700; background: #F1F5F9; padding: 4px 10px; border-radius: 20px;">📋 Ticket #${p.numero_ticket || p.id}</span>
+                    </div>
+                    <p style="font-size: 15px; color: #1E293B; font-weight: 700; margin: 4px 0;">
+                        📍 Ubicación: <span style="color: #E67E22; font-size: 19px; font-weight: 800; margin-left: 4px;">Mesa ${p.mesa || 'Mesón'}</span>
+                    </p>
+                    <div class="mesero-item-box">
+                        <span style="display: block; font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">📋 Ítems a retirar del mostrador:</span>
+                        <ul style="padding-left: 0; margin: 0; line-height: 1.5;">${itemsHTML}</ul>
+                    </div>
+                    <button class="mesero-btn-entregar" onclick="entregarPedidoMeseroReal(this, ${p.id}, '${p.mesa}')" style="margin-top: 5px; width: 100%;">
+                        <span>🏃‍♂️ Marcar como Entregado en Mesa</span>
+                    </button>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        // ========================================================
+        // 🏃‍♂️ CIERRE DE CICLO: CONFIRMACIÓN EN MESA (CONEXIÓN BACKEND REAL)
+        // ========================================================
+        async function entregarPedidoMeseroReal(botonHtml, idPedido, numeroMesa) {
+            var tarjetaAlerta = botonHtml.closest('.mesero-ticket-card') || botonHtml.closest('div');
+
+            try {
+                // 🚀 IMPACTO EN MYSQL: Cambia estado a ENTREGADO y libera la mesa a DISPONIBLE en el servidor
+                var response = await fetch('/api/mesero/entregar/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : ''
+                    },
+                    body: JSON.stringify({ 
+                        pedido_id: idPedido, 
+                        mesa_numero: numeroMesa 
+                    })
+                });
+
+                var data = await response.json();
+
+                if (data.status === 'success') {
+                    if (tarjetaAlerta) {
+                        // Animación de salida elástica para remover la tarjeta con suavidad
+                        tarjetaAlerta.style.transition = 'all 0.3s ease';
+                        tarjetaAlerta.style.opacity = '0';
+                        tarjetaAlerta.style.transform = 'scale(0.9) translateY(10px)';
+                        setTimeout(() => tarjetaAlerta.remove(), 300);
+                    }
+
+                    // 🟢 NOTIFICACIÓN ELEGANTE: Ocupamos el modal personalizado integrado
+                    if (typeof mostrarAlertaModal === 'function') {
+                        mostrarAlertaModal(`¡Servicio Completado! La Mesa ${numeroMesa} ha sido entregada y liberada con éxito en el sistema.`, "exito");
+                    }
+
+                    // Refrescamos los paneles de forma síncrona de inmediato
+                    if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                        await sincronizarEstadoDesdeBackend();
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Error al cerrar ciclo de entrega del mesero:", error);
+            }
+        }
+        // ========================================================
+        // 🔄 CONMUTADOR DE MODALIDAD (MESA OBLIGATORIA / BARRA LIBRE)
+        // ========================================================
+        function conmutarObligatoriedadMesa() {
+            const modalidad = document.getElementById('cart-modalidad-select').value;
+            const contenedorMesaTexto = document.getElementById('label-mesa-obligatoria');
+            const inputSeccion = document.getElementById('cart-seccion-select');
+            const inputMesa = document.getElementById('cart-mesa-select');
+            const gridZonas = document.getElementById('grid-botones-zonas-venta');
+            const gridBotones = document.getElementById('grid-botones-mesas-venta');
+            const badgeElegida = document.getElementById('badge-mesa-elegida');
+
+            if (modalidad === 'MESON') {
+                if (contenedorMesaTexto) {
+                    contenedorMesaTexto.innerText = "✨ Retiro por Barra / Mesón ✨";
+                    contenedorMesaTexto.style.color = "var(--primary-color)";
+                }
+                if (inputSeccion) inputSeccion.value = '';
+                if (inputMesa) inputMesa.value = 'MESON';
+                if (badgeElegida) {
+                    badgeElegida.innerText = '📦 Barra / Mesón';
+                    badgeElegida.style.background = '#EBF5FB';
+                    badgeElegida.style.color = '#1B4F72';
+                }
+                if (gridZonas) gridZonas.style.display = 'none';
+                if (gridBotones) gridBotones.style.display = 'none';
+            } else {
+                if (contenedorMesaTexto) {
+                    contenedorMesaTexto.innerText = "* Seleccionar Mesa Obligatoria *";
+                    contenedorMesaTexto.style.color = "#C0392B";
+                }
+                if (inputSeccion) inputSeccion.value = '';
+                if (inputMesa) inputMesa.value = '';
+                if (badgeElegida) {
+                    badgeElegida.innerText = 'Sin mesa';
+                    badgeElegida.style.background = '#F1F5F9';
+                    badgeElegida.style.color = '#475569';
+                }
+                if (gridZonas) {
+                    gridZonas.style.display = 'grid';
+                    actualizarSelectoresYBarrasDeMesas();
+                }
+                if (gridBotones) {
+                    gridBotones.style.display = 'grid';
+                    gridBotones.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; font-size: 11px; color: #64748B; padding: 5px; background: #F8FAFC; border-radius: 6px;">Toque una letra de Zona arriba para ver sus mesas</div>';
+                }
+            }
+        }
+
+        // ========================================================
+        // 🥤 CONTROL CENTRALIZADO UNIFICADO DE DESPACHO DE BARRA
+        // ========================================================
+        async function gestionarCicloBarraReal(botonHtml, idPedido) {
+            // 1. Localizar de forma robusta la tarjeta física del ticket en el DOM
+            var ticketDiv = botonHtml.closest('.safari-ticket-real') || botonHtml.closest('div');
+            if (!ticketDiv) return;
+        
+            // 2. Animación elástica visual instantánea para el Cajero
+            ticketDiv.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            ticketDiv.style.opacity = '0';
+            ticketDiv.style.transform = 'scale(0.9) translateY(-10px)';
+            
+            // Esperamos 300ms a que termine la animación visual antes de operar en el servidor
+            setTimeout(async function() {
+                ticketDiv.remove();
+                
+                try {
+                    // 3. PASO A PASO EN EL SERVIDOR: Cambiar estado a LISTO en la estación de BARRA
+                    var response = await fetch('/api/kds/despachar/', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : ''
+                        },
+                        body: JSON.stringify({ 
+                            pedido_id: idPedido, 
+                            tipo: 'BARRA' 
+                        })
+                    });
+                    
+                    var data = await response.json();
+                    
+                    // 🟢 NOTIFICACIÓN ELEGANTE INTEGRADA
+                    if (data.status === 'success' && typeof mostrarAlertaModal === 'function') {
+                        mostrarAlertaModal("🥤 ¡Bebestible/Mesón despachado exitosamente de la barra!", "exito");
+                    }
+                    
+                } catch (error) {
+                    console.error("❌ Error en sincronización transaccional con Django:", error);
+                }
+                
+                setTimeout(async function() {
+                    if (typeof sincronizarEstadoDesdeBackend === 'function') {
+                        await sincronizarEstadoDesdeBackend();
+                    }
+                }, 150);
+            
+            }, 300);
+        }
+
+        // ⚡ Abre la ventana modal limpiando los valores a 0
+        function abrirVentanaModalCuadratura() {
+            var overlay = document.getElementById('modal-cuadratura-overlay');
+            if (overlay) {
+                document.getElementById('form-cuadratura-maestra').reset();
+                document.getElementById('visor-total-cuadratura').innerText = "$0";
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function cerrarVentanaModalCuadratura() {
+            var overlay = document.getElementById('modal-cuadratura-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // 🎯 CALCULO MATEMÁTICO EN TIEMPO REAL CON VALIDACIÓN ANTI-NEGATIVOS
+        function calcularTotalCuadraturaReal() {
+            // Math.max(0, ...) garantiza el control del proceso bloqueando valores negativos
+            var total = 
+                (Math.max(0, parseInt(document.getElementById('b_20000').value) || 0) * 20000) +
+                (Math.max(0, parseInt(document.getElementById('b_10000').value) || 0) * 10000) +
+                (Math.max(0, parseInt(document.getElementById('b_5000').value) || 0) * 5000) +
+                (Math.max(0, parseInt(document.getElementById('b_1000').value) || 0) * 1000) +
+                (Math.max(0, parseInt(document.getElementById('m_500').value) || 0) * 500) +
+                (Math.max(0, parseInt(document.getElementById('m_100').value) || 0) * 100) +
+                (Math.max(0, parseInt(document.getElementById('m_50').value) || 0) * 50) +
+                (Math.max(0, parseInt(document.getElementById('m_5').value) || 0) * 5) +
+                (Math.max(0, parseInt(document.getElementById('m_1').value) || 0) * 1);
+        
+            document.getElementById('visor-total-cuadratura').innerText = "$" + total.toLocaleString('es-CL');
+            return total;
+        }
+        // 📡 ENVÍO ASÍNCRONO DEL ARQUEO AL BACKEND DE DJANGO
+        async function enviarCuadraturaServidorReal(e) {
+            e.preventDefault();
+
+            // Empaquetamos el payload con los desgloses exigidos
+            var payload = {
+                b_20000: Math.max(0, parseInt(document.getElementById('b_20000').value) || 0),
+                b_10000: Math.max(0, parseInt(document.getElementById('b_10000').value) || 0),
+                b_5000: Math.max(0, parseInt(document.getElementById('b_5000').value) || 0),
+                b_1000: Math.max(0, parseInt(document.getElementById('b_1000').value) || 0),
+                m_500: Math.max(0, parseInt(document.getElementById('m_500').value) || 0),
+                m_100: Math.max(0, parseInt(document.getElementById('m_100').value) || 0),
+                m_50: Math.max(0, parseInt(document.getElementById('m_50').value) || 0),
+                m_5: Math.max(0, parseInt(document.getElementById('m_5').value) || 0),
+                m_1: Math.max(0, parseInt(document.getElementById('m_1').value) || 0)
+            };
+        
+            try {
+                var response = await fetch('/api/caja/cerrar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : ''
+                    },
+                    body: JSON.stringify(payload)
+                });
+            
+                var data = await response.json();
+
+                if (data.status === 'success') {
+                    cerrarVentanaModalCuadratura();
+
+                    // Desplegar el resumen de cuadratura calculado en Python
+                    alert(`✅ Caja Cerrada Exitosamente.\n\n💰 Ventas Sistema: $${data.sistema.toLocaleString('es-CL')}\n💵 Conteo Físico: $${data.contado.toLocaleString('es-CL')}\n📉 Diferencia (Descuadre): $${data.diferencia.toLocaleString('es-CL')}`);
+
+                    // Forzamos la salida al Login limpiando la memoria del cajero
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    window.location.href = '/logout/';
+                } else {
+                    alert("⚠️ Error: " + data.message);
+                }
+            } catch (err) {
+                console.error("Falla reportando cuadratura:", err);
+                alert("❌ Error de red al conectar con el servidor.");
+            }
+        }
+
+        // ========================================================
+        // 🔐 VALIDACIÓN DE TURNO: RESTRICCIÓN EXCLUSIVA PARA EL CAJERO
+        // ========================================================
+        async function verificarSesionCajaActiva() {
+            const rolActual = "{{ usuario_rol_django }}";
+            try {
+                const responseCaja = await fetch('/api/caja/verificar-estado/?rol=' + encodeURIComponent(rolActual));
+                const estadoCaja = await responseCaja.json();
+
+                if (estadoCaja.status === 'success') {
+                    if (estadoCaja.necesita_apertura) {
+                        actualizarBotonJornadaVisual(false, false);
+                    } else {
+                        actualizarBotonJornadaVisual(true, estadoCaja.esta_pausada);
+                    }
+                }
+            } catch (err) {
+                console.error("[SAFARI] Error sincronizando estado de jornada:", err);
+            }
+        }
+        // 📡 ENVÍO ASÍNCRONO DE APERTURA AL BACKEND
+        async function enviarAperturaCajaServidor(e) {
+            e.preventDefault();
+            const rolActual = "{{ usuario_rol_django }}";
+            const montoInicial = Math.max(0, parseInt(document.getElementById('monto_apertura_input').value) || 0);
+
+            try {
+                const response = await fetch('/api/caja/abrir/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({ monto_apertura: montoInicial, rol: rolActual })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('modal-apertura-overlay').style.display = 'none';
+                    actualizarBotonJornadaVisual(true, false);
+                    mostrarAlertaModal(`🎉 Jornada Iniciada. Sencillo cargado: $${montoInicial.toLocaleString('es-CL')}`, "exito");
+                } else {
+                    alert("⚠️ Error: " + data.message);
+                }
+            } catch (err) {
+                alert("❌ Error de red al registrar la apertura.");
+            }
+        }
+
+                function actualizarBotonJornadaVisual(estaAbierta, estaPausada = false) {
+            // 🔒 CONEXIÓN DIRECTA CON EL BLOQUEO DE VENTAS Y COMPROBANTE
+            if (typeof actualizarBloqueoPorTurno === 'function') {
+                actualizarBloqueoPorTurno(Boolean(estaAbierta) && !Boolean(estaPausada));
+            }
+            
+            cajaAbiertaActualmente = estaAbierta || estaPausada;
+            jornadaPausadaActualmente = estaPausada;
+
+            const rolActual = "{{ usuario_rol_django }}";
+            const btnJornada = document.getElementById('btn-jornada-toggle');
+            const btnPausar = document.getElementById('btn-pausar-jornada');
+            const modalPausa = document.getElementById('modal-pausa-overlay');
+            const textoPausa = document.getElementById('texto-modal-pausa');
+
+            if (btnJornada) {
+                if (estaAbierta || estaPausada) {
+                    btnJornada.innerText = "🔴 Cerrar Turno";
+                    btnJornada.style.backgroundColor = "#E67E22";
+                } else {
+                    btnJornada.innerText = "🟢 Iniciar Turno";
+                    btnJornada.style.backgroundColor = "#27AE60";
+                }
+            }
+
+            // Ahora tanto Cajero como Cocina ven el botón Pausar / Reanudar cuando tienen jornada activa
+            if (btnPausar) {
+                if (estaAbierta || estaPausada) {
+                    btnPausar.style.display = "inline-block";
+                    btnPausar.innerText = estaPausada ? "▶️ Reanudar Jornada" : "⏸️ Pausar Jornada";
+                    btnPausar.style.backgroundColor = estaPausada ? "#2980B9" : "#F39C12";
+                } else {
+                    btnPausar.style.display = "none";
+                }
+            }
+
+            if (textoPausa) {
+                textoPausa.innerText = (rolActual === 'Cocinero' || rolActual === 'Cocina')
+                    ? "El Monitor de Cocina está temporalmente en pausa. Presiona el botón para reanudar."
+                    : "La terminal de caja está temporalmente pausada. Presiona el botón para reanudar la atención.";
+            }
+
+            if (modalPausa) {
+                modalPausa.style.display = estaPausada ? "flex" : "none";
+            }
+        }
+        
+        async function pausarReanudarJornada() {
+            const rolActual = "{{ usuario_rol_django }}";
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                const response = await fetch('/api/caja/pausar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ rol: rolActual })
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const pausada = (data.estado_caja === 'PAUSADA');
+                    actualizarBotonJornadaVisual(!pausada, pausada);
+                    if (!pausada) {
+                        mostrarAlertaModal("▶️ Jornada reanudada. Estación lista para operar.", "exito");
+                    }
+                } else {
+                    mostrarAlertaModal("⚠️ " + data.message, "alerta");
+                }
+            } catch (err) {
+                console.error("Error al pausar/reanudar jornada:", err);
+                mostrarAlertaModal("❌ Error de conexión al cambiar el estado de la jornada.", "alerta");
+            }
+        }
+        // ========================================================
+        // 🔄 GENERADOR DINÁMICO DE SECCIONES Y BARRA DE ZONAS
+        // ========================================================
+        function actualizarSelectoresYBarrasDeMesas() {
+            const letrasUnicas = [...new Set(
+                listaMesasMaestra
+                    .map(m => (m.numero || '').toString().trim().toUpperCase().charAt(0))
+                    .filter(letra => /^[A-Z]$/.test(letra))
+            )].sort();
+
+            // 1. Dibujar cuadrícula compacta de botones de Zona (A, B, C... Z)
+            const gridZonas = document.getElementById('grid-botones-zonas-venta');
+            const inputSeccion = document.getElementById('cart-seccion-select');
+
+            if (gridZonas && inputSeccion) {
+                const zonaActual = inputSeccion.value;
+                gridZonas.innerHTML = '';
+            
+                letrasUnicas.forEach(letra => {
+                    const btnZona = document.createElement('button');
+                    btnZona.type = 'button';
+                    btnZona.innerText = letra;
+                    btnZona.title = 'Zona ' + letra;
+                
+                    const esActiva = (letra === zonaActual);
+                    btnZona.style.cssText = `
+                        padding: 4px 0;
+                        border-radius: 4px;
+                        font-weight: 800;
+                        font-size: 11px;
+                        cursor: pointer;
+                        border: 1px solid ${esActiva ? '#1E8449' : '#CBD5E1'};
+                        background-color: ${esActiva ? '#27AE60' : '#FFFFFF'};
+                        color: ${esActiva ? '#FFFFFF' : '#334155'};
+                        transition: all 0.12s ease;
+                    `;
+                
+                    btnZona.onclick = function() {
+                        inputSeccion.value = letra;
+                        actualizarSelectoresYBarrasDeMesas();
+                        filtrarMesasPorLetra();
+                    };
+                
+                    gridZonas.appendChild(btnZona);
+                });
+            }
+        
+            // 2. Actualizar monitor general de mesas
+            if (letrasUnicas.length > 0 && !letrasUnicas.includes(letraZonaActivaMonitor)) {
+                letraZonaActivaMonitor = letrasUnicas[0];
+                const txtTitulo = document.getElementById('titulo-zona-actual');
+                if (txtTitulo) txtTitulo.innerText = "📍 Viendo: Zona " + letraZonaActivaMonitor;
+            }
+        
+            if (typeof renderBarraLetrasMonitor === 'function') {
+                renderBarraLetrasMonitor(letrasUnicas);
+            }
+        }
+
+        function renderResumenMesasOcupadas() {
+            const contenedorChips = document.getElementById('lista-chips-ocupadas');
+            if (!contenedorChips) return;
+
+            if (!Array.isArray(mesasOcupadas) || mesasOcupadas.length === 0) {
+                contenedorChips.innerHTML = '<span style="color: #27AE60; font-weight: 700; font-size: 13px;">✅ Todas las mesas están disponibles</span>';
+                return;
+            }
+        
+            // Ordenar alfanuméricamente (ej: A10, B3, Z1)
+            const ordenadas = [...mesasOcupadas].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+        
+            contenedorChips.innerHTML = '';
+            ordenadas.forEach(codigoMesa => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.innerText = `🍽️ Mesa ${codigoMesa}`;
+                chip.title = `Ir a la Zona ${codigoMesa.charAt(0)}`;
+                chip.style.cssText = `
+                    background-color: #E67E22;
+                    color: white;
+                    border: none;
+                    padding: 5px 12px;
+                    border-radius: 20px;
+                    font-weight: 800;
+                    font-size: 13px;
+                    cursor: pointer;
+                    box-shadow: 0 2px 5px rgba(230, 126, 34, 0.35);
+                    transition: transform 0.15s ease;
+                `;
+            
+                // Al hacer clic en la etiqueta, cambia automáticamente a la Zona de esa mesa
+                chip.onclick = function() {
+                    const letraZona = codigoMesa.charAt(0).toUpperCase();
+                    if (letraZona) {
+                        letraZonaActivaMonitor = letraZona;
+                        const txtTitulo = document.getElementById('titulo-zona-actual');
+                        if (txtTitulo) txtTitulo.innerText = "📍 Viendo: Zona " + letraZona;
+                        if (typeof renderBarraLetrasMonitor === 'function') renderBarraLetrasMonitor();
+                        if (typeof renderTarjetasMesasMonitor === 'function') renderTarjetasMesasMonitor();
+                    }
+                };
+            
+                contenedorChips.appendChild(chip);
+            });
+        }
+        function buscarProductosEnTiempoReal(texto) {
+            const normalizar = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+            const termino = normalizar(texto);
+
+            const btnLimpiar = document.getElementById('btn-limpiar-buscador');
+            if (btnLimpiar) {
+                btnLimpiar.style.display = termino.length > 0 ? 'flex' : 'none';
+            }
+        
+            const secComida = document.getElementById('seccion-comidarapida');
+            const secBebestibles = document.getElementById('seccion-bebestibles');
+            const secSouvenirs = document.getElementById('seccion-souvenirs');
+        
+            // Si el buscador está vacío, restaurar la categoría activa normal
+            if (!termino) {
+                document.querySelectorAll('.catalog-section .product-card').forEach(card => {
+                    card.style.display = '';
+                });
+                if (secComida) secComida.style.display = (categoriaActivaVentas === 'comidarapida') ? 'block' : 'none';
+                if (secBebestibles) secBebestibles.style.display = (categoriaActivaVentas === 'bebestibles') ? 'block' : 'none';
+                if (secSouvenirs) secSouvenirs.style.display = (categoriaActivaVentas === 'souvenirs') ? 'block' : 'none';
+                return;
+            }
+        
+            // Buscar en las 3 categorías simultáneamente y mostrar las secciones con coincidencias
+            [secComida, secBebestibles, secSouvenirs].forEach(seccion => {
+                if (!seccion) return;
+                const tarjetas = seccion.querySelectorAll('.product-card');
+                let coincidencias = 0;
+            
+                tarjetas.forEach(card => {
+                    const nombreProd = normalizar(card.querySelector('h4')?.innerText);
+                    if (nombreProd.includes(termino)) {
+                        card.style.display = '';
+                        coincidencias++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            
+                seccion.style.display = coincidencias > 0 ? 'block' : 'none';
+            });
+        }
+
+        function limpiarBuscadorProductos() {
+            const inputBuscador = document.getElementById('buscador-productos-ventas');
+            if (inputBuscador) {
+                inputBuscador.value = '';
+                inputBuscador.focus();
+            }
+            buscarProductosEnTiempoReal('');
+        }
+
+        function abrirModalLogout(e) {
+            if (e) e.preventDefault();
+            const modal = document.getElementById('modal-confirmar-logout');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+        
+        function cerrarModalLogout() {
+            const modal = document.getElementById('modal-confirmar-logout');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        function ejecutarLogoutConfirmado() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = '/logout/';
+        }
+
+        async function sincronizarSegmentacionDesdeMySQL() {
+            try {
+                const resp = await fetch('/api/segmentacion/');
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    localStorage.setItem('safari_segmentacion_terminales', JSON.stringify({
+                        caja: data.caja,
+                        barra: data.barra
+                    }));
+                    if (typeof renderCatalogoDinamicoVentas === 'function') {
+                        renderCatalogoDinamicoVentas();
+                    }
+                }
+            } catch (e) {
+                console.warn("No se pudo sincronizar segmentación desde MySQL:", e);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', sincronizarSegmentacionDesdeMySQL);
+
+
+
+    </script>
+</body>
+</html>
