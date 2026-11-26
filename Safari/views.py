@@ -201,6 +201,7 @@ def api_estado_general(request):
     """Retorna productos, mesas sincronizadas, comandas KDS (Cocina 4 cols / Barra 2 cols) y mesero (2 cols)."""
     try:
         from django.db.models import Q
+        from .models import SegmentacionTerminal
 
         mesas = list(
             Mesa.objects.all().values('id', 'numero')
@@ -209,6 +210,15 @@ def api_estado_general(request):
         productos_qs = Producto.objects.filter(
             activo=True
         ).select_related('categoria')
+
+        # 🎯 FILTRO POR SEGMENTACIÓN DE USUARIO (Configurado en Admin)
+        if request.user.is_authenticated:
+            seg_usuario = SegmentacionTerminal.objects.filter(
+                terminal=f"USER_{request.user.username}"
+            ).first()
+            if seg_usuario:
+                cats_permitidas = [c.strip().lower() for c in seg_usuario.categorias.split(',') if c.strip()]
+                productos_qs = productos_qs.filter(categoria__codigo__in=cats_permitidas)
 
         productos = []
         for p in productos_qs:
@@ -862,9 +872,16 @@ def api_admin_datos(request):
     from .models import Empleado, Producto, Mesa, CuentaFiado, SegmentacionTerminal, CajaSesion
 
     try:
-        # 1. Consultamos las sesiones con estado 'ABIERTA' en CajaSesion y las cruzamos por username
-        sesiones_abiertas = CajaSesion.objects.select_related('cajero').filter(estado='ABIERTA')
-        usuarios_en_turno = set(s.cajero.username for s in sesiones_abiertas if s.cajero)
+        # 1. Consultamos las sesiones abiertas o pausadas en CajaSesion y las cruzamos por username
+        sesiones_activas = CajaSesion.objects.select_related('cajero').filter(estado__in=['ABIERTA', 'PAUSADA'])
+        estado_turnos = {}
+        for s in sesiones_activas:
+            if s.cajero:
+                esta_pausada = (s.estado == 'PAUSADA')
+                estado_turnos[s.cajero.username] = {
+                    'en_turno': not esta_pausada,
+                    'en_pausa': esta_pausada
+                }
 
         empleados = list(
             Empleado.objects.all().order_by('id').values(
@@ -879,9 +896,9 @@ def api_admin_datos(request):
         )
         for e in empleados:
             e['pass'] = e.pop('pass_plain')
-            esta_en_turno = (e['user'] in usuarios_en_turno)
-            e['en_turno'] = esta_en_turno
-            e['en_pausa'] = False
+            info_turno = estado_turnos.get(e['user'], {'en_turno': False, 'en_pausa': False})
+            e['en_turno'] = info_turno['en_turno']
+            e['en_pausa'] = info_turno['en_pausa']
 
         productos_qs = Producto.objects.select_related('categoria').filter(activo=True).order_by('id')
         productos = []
@@ -913,17 +930,15 @@ def api_admin_datos(request):
                 'deuda': f.deuda
             })
 
-        caja_seg, _ = SegmentacionTerminal.objects.get_or_create(
-            terminal='CAJA',
-            defaults={'categorias': 'comidarapida,bebestibles,souvenirs'}
-        )
-        barra_seg, _ = SegmentacionTerminal.objects.get_or_create(
-            terminal='BARRA',
-            defaults={'categorias': 'souvenirs'}
-        )
+        # 2. Cargar segmentación individual por usuario (USER_<username>)
+        registros_seg = SegmentacionTerminal.objects.filter(terminal__startswith='USER_')
+        usuarios_seg_map = {}
+        for r in registros_seg:
+            uname = r.terminal.replace('USER_', '', 1)
+            usuarios_seg_map[uname] = [c for c in r.categorias.split(',') if c]
+
         segmentacion_data = {
-            'caja': [c for c in caja_seg.categorias.split(',') if c],
-            'barra': [c for c in barra_seg.categorias.split(',') if c]
+            'usuarios': usuarios_seg_map
         }
 
         return JsonResponse({
@@ -938,6 +953,7 @@ def api_admin_datos(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
     
 # ========================================================
 # 👥 API: CREAR, MODIFICAR, HABILITAR Y VISIBILIDAD EN LOGIN
@@ -1718,43 +1734,45 @@ def pausar_caja_api(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 # ========================================================
-# 🎯 API: SEGMENTACIÓN POR TERMINAL (GUARDADO EN MYSQL)
+# 🎯 API: SEGMENTACIÓN POR USUARIO (GUARDADO EN MYSQL)
 # ========================================================
 @csrf_exempt
 def api_segmentacion_terminal(request):
     from .models import SegmentacionTerminal
 
-    caja_obj, _ = SegmentacionTerminal.objects.get_or_create(
-        terminal='CAJA',
-        defaults={'categorias': 'comidarapida,bebestibles,souvenirs'}
-    )
-    barra_obj, _ = SegmentacionTerminal.objects.get_or_create(
-        terminal='BARRA',
-        defaults={'categorias': 'souvenirs'}
-    )
-
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            cats_caja = data.get('caja', [])
-            cats_barra = data.get('barra', [])
+            usuario = str(data.get('usuario', '')).strip()
+            cats = data.get('categorias', [])
 
-            caja_obj.categorias = ','.join([str(c).strip().lower() for c in cats_caja])
-            caja_obj.save()
+            if not usuario:
+                return JsonResponse({'status': 'error', 'message': 'Debe seleccionar un usuario.'}, status=400)
 
-            barra_obj.categorias = ','.join([str(c).strip().lower() for c in cats_barra])
-            barra_obj.save()
+            clave_terminal = f"USER_{usuario}"
+            obj, _ = SegmentacionTerminal.objects.get_or_create(
+                terminal=clave_terminal,
+                defaults={'categorias': 'comidarapida,bebestibles,souvenirs'}
+            )
+            obj.categorias = ','.join([str(c).strip().lower() for c in cats])
+            obj.save()
 
             return JsonResponse({
                 'status': 'success',
-                'caja': [c for c in caja_obj.categorias.split(',') if c],
-                'barra': [c for c in barra_obj.categorias.split(',') if c]
+                'usuario': usuario,
+                'categorias': [c for c in obj.categorias.split(',') if c]
             })
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+    # Si es GET, devolvemos el diccionario completo de todos los usuarios configurados
+    registros = SegmentacionTerminal.objects.filter(terminal__startswith='USER_')
+    usuarios_map = {}
+    for r in registros:
+        uname = r.terminal.replace('USER_', '', 1)
+        usuarios_map[uname] = [c for c in r.categorias.split(',') if c]
+
     return JsonResponse({
         'status': 'success',
-        'caja': [c for c in caja_obj.categorias.split(',') if c],
-        'barra': [c for c in barra_obj.categorias.split(',') if c]
+        'usuarios': usuarios_map
     })

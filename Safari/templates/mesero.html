@@ -458,15 +458,42 @@
             renderProductosTomaPedidoMesero();
         }
 
-        function renderProductosTomaPedidoMesero() {
+                function renderProductosTomaPedidoMesero() {
             const grid = document.getElementById('grid-productos-toma-mesero');
             if (!grid) return;
             const data = window.ultimoEstadoBackend || {};
             const productos = data.productos || [];
             const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
             const filtro = normalizar(document.getElementById('buscador-productos-mesero')?.value);
+
+            // 🎯 Ocultar botones de categorías que este usuario no tiene habilitadas
+            const catsDisponibles = [...new Set(productos.map(p => (p.categoria || '').toLowerCase().trim()))];
+            document.querySelectorAll('.mesero-cat-pill').forEach(btn => {
+                const match = btn.getAttribute('onclick')?.match(/'([^']+)'/);
+                if (match && match[1]) {
+                    const catBtn = match[1];
+                    btn.style.display = (catsDisponibles.length > 0 && catsDisponibles.includes(catBtn)) ? 'inline-block' : 'none';
+                }
+            });
+
+            // Si la categoría activa fue deshabilitada para este mesero, saltar a la primera disponible
+            if (catsDisponibles.length > 0 && !catsDisponibles.includes(catActivaMesero)) {
+                catActivaMesero = catsDisponibles[0];
+                document.querySelectorAll('.mesero-cat-pill').forEach(btn => {
+                    const match = btn.getAttribute('onclick')?.match(/'([^']+)'/);
+                    const esActiva = (match && match[1] === catActivaMesero);
+                    btn.style.background = esActiva ? '#1E293B' : '#FFFFFF';
+                    btn.style.color = esActiva ? '#F7CEA5' : '#1E293B';
+                    btn.style.border = esActiva ? '2px solid #F7CEA5' : '1px solid #CBD5E1';
+                });
+            }
         
             grid.innerHTML = '';
+            if (productos.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 25px; color: #F8FAFC; font-weight: 700;">⚠️ No tienes categorías de productos asignadas para venta.</div>';
+                return;
+            }
+
             productos.forEach(p => {
                 const nombre = p.name || p.nombre || '';
                 const precio = Number(p.price || p.precio || 0);
@@ -569,6 +596,15 @@
             actualizarCarritoMeseroUI();
         }
 
+        // Permite modificar el precio unitario en el carrito del mesero (ej: convenios)
+        function modificarPrecioManualMesero(idx, nuevoPrecio) {
+            const precioNum = parseFloat(nuevoPrecio);
+            if (!isNaN(precioNum) && precioNum >= 0 && carritoMesero[idx]) {
+                carritoMesero[idx].price = precioNum;
+                actualizarCarritoMeseroUI();
+            }
+        }
+
         function actualizarCarritoMeseroUI() {
             const lista = document.getElementById('mesero-carrito-lista');
             const vacio = document.getElementById('mesero-carrito-vacio');
@@ -593,7 +629,14 @@
                 row.innerHTML = `
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 700; font-size: 13px; color: #1E293B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
-                        <div style="font-size: 11px; color: #27AE60; font-weight: 700;">$${sub.toLocaleString('es-CL')}</div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                            <span style="font-size: 11px; color: #64748B; font-weight: 700;">Unit: $</span>
+                            <input type="number" min="0" value="${item.price}" 
+                                   onchange="modificarPrecioManualMesero(${idx}, this.value)"
+                                   title="Haz clic para modificar el precio unitario"
+                                   style="width: 72px; padding: 2px 5px; font-size: 12px; font-weight: 800; color: #27AE60; border: 1px solid #CBD5E1; border-radius: 4px; background: #F8FAFC;">
+                            <span style="font-size: 11px; color: #1E293B; font-weight: 800;">= $${sub.toLocaleString('es-CL')}</span>
+                        </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                         <button type="button" onclick="carritoMesero[${idx}].cantidad--; if(carritoMesero[${idx}].cantidad<=0) carritoMesero.splice(${idx},1); actualizarCarritoMeseroUI();" style="width: 24px; height: 24px; border: 1px solid #CBD5E1; background: #F1F5F9; border-radius: 4px; font-weight: bold; cursor: pointer;">-</button>
@@ -612,7 +655,7 @@
             actualizarCarritoMeseroUI();
         }
 
-                async function enviarPedidoMeseroACocina(btn) {
+        async function enviarPedidoMeseroACocina(btn) {
             if (!jornadaMeseroActiva) {
                 mostrarAlertaModal("⚠️ Debe presionar 'Iniciar Jornada' antes de enviar pedidos a Cocina.", "Jornada Cerrada");
                 return;
@@ -675,7 +718,7 @@
         }
 
 
-                function actualizarBotonJornadaMeseroUI(estaAbierta, estaPausada = false) {
+        function actualizarBotonJornadaMeseroUI(estaAbierta, estaPausada = false) {
             jornadaMeseroActiva = Boolean(estaAbierta) && !Boolean(estaPausada);
 
             const btnJornada = document.getElementById('btn-jornada-mesero');
